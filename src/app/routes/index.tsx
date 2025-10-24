@@ -1,25 +1,35 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "@/features/auth/pages/LoginPage";
-import RegisterPage from '@/features/auth/pages/registerPage';
-
-// import {TestAuthfrom "@/features/auth/pages/testAuth";
+import RegisterPage from "@/features/auth/pages/RegisterPage";
+import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"; // futura página
+import { Layout } from "@/core/components/Layout";
+import { RouteGuard } from "./route-guards";
 
 const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <LoginPage />,
-    },
-    {
-        path: "/register",
-        element: <RegisterPage />,
-    }
-    // {
-    //     path: "/test-auth",
-    //     element: <TestAuth />,
-    // },
-    
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />,
+  },
+  {
+    element: <RouteGuard />,
+    children: [
+      {
+        // Layout con Navbar + Sidebar + Outlet
+        element: <Layout />,
+        children: [
+          {
+            path: "/dashboard",
+            element: <DashboardPage />,
+          },
+          // aquí luego agregas más rutas internas protegidas
+        ],
+      },
+    ],
+  },
 ]);
 
-export const AppRouter = () => {
-    return <RouterProvider router={router} />;
-};
+export const AppRouter = () => <RouterProvider router={router} />;
