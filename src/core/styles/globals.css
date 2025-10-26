@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Opcional: solo para poder usar dark: en clases utilitarias */
+/* @custom-variant dark (&:where(.dark, .dark *)); */
+
+/* 1) Define los tokens para que Tailwind genere las utilidades */
+@theme {
+  --color-brand-blue: #2647a5;
+  --color-brand-green: #2fb866;
+  --color-brand-gold: #caa23a;
+
+  --color-primary: #2647a5;
+  --color-secondary: #2fb866;
+
+  --color-muted: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-border: #e5e7eb;
+}
+
+/* 2) FORZAR los valores efectivos con CSS plano (toman precedencia) */
+:root {
+  --color-primary: #2647a5;
+  --color-secondary: #2fb866;
+
+  --color-muted: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-border: #e5e7eb;
+}
+
+html.dark {
+  --color-primary: #1b2b6e;
+  --color-secondary: #3f4ac8;
+
+  --color-muted: #0b1220;
+  --color-surface: #0f172a;
+  --color-text: #e5e7eb;
+  --color-border: #1f2937;
+}
