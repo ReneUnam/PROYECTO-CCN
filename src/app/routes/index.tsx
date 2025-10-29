@@ -1,7 +1,8 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "@/features/auth/pages/LoginPage";
-import RegisterPage from "@/features/auth/pages/RegisterPage";
-import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"; // futura página
+import RegisterPage from "@/features/auth/pages/registerPage";
+import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
+import { QuestionsPage } from "@/features/dashboard/pages/QuestionsPage";
 import { Layout } from "@/core/components/Layout";
 import { RouteGuard } from "./route-guards";
 
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
             path: "/dashboard",
             element: <DashboardPage />,
           },
+          {
+            path: "/questions",
+            element: <QuestionsPage/>
+          }
           // aquí luego agregas más rutas internas protegidas
         ],
       },
