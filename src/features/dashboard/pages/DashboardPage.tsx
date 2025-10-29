@@ -3,19 +3,19 @@ const quickActions = [
     id: "surveys",
     title: "Diario emocional",
     description: "Encuestas rápidas para conocer tu estado de ánimo y experiencias diarias.",
-    image: "https://images.unsplash.com/photo-1516321165247-4aa89a48be28",
+    image: "https://imgproxy.domestika.org/unsafe/w:1200/rs:fill/plain/src://blog-post-open-graph-covers/000/008/080/8080-original.jpg?1623945060",
   },
   {
     id: "questions",
     title: "Preguntas",
     description: "Expresa con libertad tus pensamientos o preocupaciones.",
-    image: "https://images.unsplash.com/photo-1485217988980-11786ced9454",
+    image: "https://pablotovar.com/wp-content/uploads/2021/10/10-preguntas-para-mejorar-tu-vida.png",
   },
   {
     id: "forum",
     title: "Buzón",
     description: "Un espacio privado para compartir tus experiencias con nosotros.",
-    image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d",
+    image: "https://i.ytimg.com/vi/VOcK7YbaL_M/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBL0FF8P3UqO2aqm6KROqQHun2qTQ",
   },
   {
     id: "chatbot",
@@ -23,8 +23,6 @@ const quickActions = [
     description: "Habla con nuestro asistente emocional. Está aquí para escucharte.",
     image: "https://er.educause.edu/-/media/images/articles/2024/04/er24_041_headerart_1600x900.jpg"
   },
-  { id: "resources", title: "Recursos", description: "Explora material recomendado." },
-  { id: "wellness", title: "Bienestar", description: "Revisa tu progreso personal." },
 ];
 
 const highlights = [
@@ -70,16 +68,15 @@ export function DashboardPage() {
       <section className="space-y-6">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold">Accesos rápidos</h2>
-          <p className="text-sm">
-            Selecciona una tarjeta para continuar con tu siguiente actividad.
-          </p>
+          <p className="text-sm">Selecciona una tarjeta para continuar con tu siguiente actividad.</p>
         </header>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        {/* 2 columnas en md+ (2x2 para 4 items) con altura fija */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {quickActions.map((card) => (
             <button
               key={card.id}
-              className="group relative flex h-40 w-full flex-col justify-end overflow-hidden rounded-3xl bg-surface text-left shadow border border-border transition hover:-translate-y-1 hover:shadow-lg"
+              className="group relative flex h-56 w-full flex-col justify-end overflow-hidden rounded-3xl bg-surface text-left shadow border border-border transition hover:-translate-y-1 hover:shadow-lg"
             >
               {card.image && (
                 <div
@@ -89,9 +86,7 @@ export function DashboardPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-black/40 dark:from-black/30 dark:to-black/60" />
               <div className="relative space-y-1 p-5 text-white">
-                <p className="text-xs uppercase tracking-wide opacity-90">
-                  {card.description}
-                </p>
+                <p className="text-xs uppercase tracking-wide opacity-90">{card.description}</p>
                 <h3 className="text-lg font-semibold">{card.title}</h3>
               </div>
               <span className="absolute inset-x-0 bottom-0 h-1 bg-secondary" />
@@ -104,9 +99,7 @@ export function DashboardPage() {
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <p className="text-sm">
           Consejo del día: prioriza 10 minutos de respiración consciente.{" "}
-          <span className="font-semibold text-brand-gold">
-            Pequeños hábitos sostienen grandes cambios.
-          </span>
+          <span className="font-semibold text-brand-gold">Pequeños hábitos sostienen grandes cambios.</span>
         </p>
       </section>
     </section>
