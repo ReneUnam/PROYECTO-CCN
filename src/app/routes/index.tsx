@@ -10,6 +10,7 @@ import { JournalHubPage } from "@/features/journal/pages/JournalHubPage";
 import { JournalTypePage } from "@/features/journal/pages/JournalTypePage";
 import { JournalEmotionSessionPage } from "@/features/journal/pages/sessions/JournalEmotionSessionPage";
 import { JournalSelfCareSessionPage } from "@/features/journal/pages/sessions/JournalSelfCareSessionPage";
+import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
           {
             path: "/dashboard",
             element: <DashboardPage />,
+          },
+          {
+            path: "/profile",
+            element: <ProfilePage />,
           },
           {
             path: "/questions",

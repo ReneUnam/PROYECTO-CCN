@@ -1,4 +1,4 @@
-import { cn } from "@/core/utils/cn";
+import { cn } from "@/lib/utils";
 import type { JSX } from "react";
 
 type ChipToggleProps = {

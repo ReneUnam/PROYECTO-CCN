@@ -1,4 +1,4 @@
-import { cn } from "@/core/utils/cn";
+import { cn } from "@/lib/utils";
 
 type LikertScaleProps = {
   name: string;
