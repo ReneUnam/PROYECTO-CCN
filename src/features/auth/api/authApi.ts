@@ -60,3 +60,42 @@ export const signUp = async ({ studentId, email, password }: SignUpParams) => {
 
     return { userId };
 };
+
+// Función de inicio de sesión centralizada
+interface SignInParams {
+    studentId: string;
+    password: string;
+}
+
+export const signIn = async ({ studentId, password }: SignInParams) => {
+    const normalizedStudentId = studentId.trim().toLowerCase();
+    const normalizedPassword = password ?? '';
+
+    if (!normalizedStudentId || !normalizedPassword) {
+        throw new Error('Carnet y contraseña son obligatorios');
+    }
+
+    // Buscar el correo asociado al ID
+    const { data: allowedUser, error: allowedError } = await supabase
+        .from('allowed_users')
+        .select('email')
+        .eq('student_id', normalizedStudentId)
+        .single();
+
+    if (allowedError || !allowedUser) {
+        throw new Error('ID no encontrado o no autorizado');
+    }
+
+    const email = allowedUser.email;
+    if (!email) throw new Error('Este ID no tiene un correo asociado');
+
+    // Hacer login con Supabase Auth
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password: normalizedPassword,
+    });
+
+    if (loginError) throw new Error(loginError.message || 'Error al iniciar sesión');
+
+    return { success: true };
+};
