@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "@/features/auth/pages/LoginPage";
 import RegisterPage from "@/features/auth/pages/registerPage";
+import TermsAndConditions from "@/features/auth/pages/terms-and-conditions";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { QuestionsPage } from "@/features/questions/pages/QuestionsPage";
 import { Layout } from "@/core/components/Layout";
@@ -16,6 +17,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/terms",
+    element: <TermsAndConditions />,
   },
   {
     path: "/register",
