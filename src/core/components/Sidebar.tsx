@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import type { ComponentType } from "react";
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import {
   Home,
   User,
@@ -25,6 +26,8 @@ type LinkItem = {
   label: string;
   path: string;
   icon: ComponentType<{ className?: string }>;
+  // optional allowed roles (when set, only users with one of these roles will see the link)
+  allowedRoles?: string[];
 };
 
 export function Sidebar({ open }: SidebarProps) {
@@ -36,13 +39,19 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Buzón", path: "/forum", icon: Inbox },
     { label: "Asistente virtual", path: "/chatbot", icon: Bot },
     // Nuevas secciones
-    { label: "Recursos", path: "/resources", icon: BookOpen },
+    { label: "Recursos", path: "/resources", icon: BookOpen, allowedRoles: ["teacher"] },
     { label: "Bienestar", path: "/wellness", icon: Brain },
     { label: "Hábitos", path: "/habits", icon: CalendarCheck },
     { label: "Estadísticas", path: "/stats", icon: BarChart3 },
     { label: "Notificaciones", path: "/notifications", icon: Bell },
     { label: "Configuración", path: "/settings", icon: Settings },
   ];
+
+  const { user } = useAuth();
+  const role = user?.role ?? 'student';
+
+  // Filter links by allowedRoles (if provided)
+  const visibleLinks = links.filter((l) => !l.allowedRoles || l.allowedRoles.includes(role));
 
   const base =
     "bg-surface text-text border-r border-border shadow-sm overflow-y-auto";
@@ -63,7 +72,7 @@ export function Sidebar({ open }: SidebarProps) {
       <div className="flex h-full flex-col">
         <nav className="flex-1 p-4">
           <ul className="flex flex-col gap-2">
-            {links.map((link) => {
+            {visibleLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <li key={link.path}>

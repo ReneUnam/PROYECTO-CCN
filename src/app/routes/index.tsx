@@ -1,9 +1,10 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "@/features/auth/pages/LoginPage";
-import RegisterPage from "@/features/auth/pages/registerPage";
-import TermsAndConditions from "@/features/auth/pages/terms-and-conditionsPage";
+import RegisterPage from "@/features/auth/pages/RegisterPage";
+import TermsAndConditions from "@/features/auth/pages/Terms-and-conditionsPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { QuestionsPage } from "@/features/questions/pages/QuestionsPage";
+import MaterialsList from '@/features/materials/pages/MaterialsList';
 import { Layout } from "@/core/components/Layout";
 import { RouteGuard } from "./route-guards";
 import { AssignmentSessionPage } from "@/features/questions/pages/AssignmentSessionPage";
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
           {
             path: "/dashboard",
             element: <DashboardPage />,
+          },
+          {
+            path: "/resources",
+            element: <MaterialsList />,
           },
           {
             path: "/profile",

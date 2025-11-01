@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const quickActions = [
   {
@@ -29,6 +30,14 @@ const quickActions = [
     image: "https://er.educause.edu/-/media/images/articles/2024/04/er24_041_headerart_1600x900.jpg",
     route: "/chatbot", 
   },
+  {
+    id: "materials",
+    title: "Materiales",
+    description: "Recursos pedagógicos preparados para tus clases.",
+    image: "https://images.unsplash.com/photo-1581092545360-09a0b0b2d8d2",
+    route: "/materials",
+    allowedRoles: ["teacher"],
+  },
 ];
 
 const highlights = [
@@ -38,6 +47,20 @@ const highlights = [
 ];
 
 export function DashboardPage() {
+  const { user, loading } = useAuth();
+  const role = user?.role ?? 'student';
+  const displayName = user?.full_name ?? 'Usuario123';
+
+  const visibleActions = quickActions.filter((a) => !a.allowedRoles || a.allowedRoles.includes(role));
+
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-6xl space-y-10 text-text">
+        <p>Cargando...</p>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">
       {/* Hero con gradiente que sigue los tokens del tema */}
@@ -45,7 +68,7 @@ export function DashboardPage() {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.35em] text-white/70">
-              ¡Bienvenido Usuario123!
+              ¡Bienvenido {displayName}!
             </p>
             <h1 className="mt-2 text-3xl font-bold md:text-4xl">
               Tu espacio personal de bienestar
@@ -79,7 +102,7 @@ export function DashboardPage() {
 
         {/* 2 columnas en md+ (2x2 para 4 items) con altura fija */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {quickActions.map((card) => (
+          {visibleActions.map((card) => (
             <Link
               key={card.id}
               to={card.route}
