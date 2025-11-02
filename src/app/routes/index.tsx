@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "@/features/auth/pages/LoginPage";
-import RegisterPage from "@/features/auth/pages/RegisterPage";
+import RegisterPage from "@/features/auth/pages/registerPage";
 import TermsAndConditions from "@/features/auth/pages/Terms-and-conditionsPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { QuestionsPage } from "@/features/questions/pages/QuestionsPage";
@@ -13,6 +13,8 @@ import { JournalTypePage } from "@/features/journal/pages/JournalTypePage";
 import { JournalEmotionSessionPage } from "@/features/journal/pages/sessions/JournalEmotionSessionPage";
 import { JournalSelfCareSessionPage } from "@/features/journal/pages/sessions/JournalSelfCareSessionPage";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
+import ConfirmEmailPage from "@/features/auth/pages/ConfirmEmailPage";
+import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +28,14 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <RegisterPage />,
+  },
+  {
+    path: "/auth/confirm-email",
+    element: <ConfirmEmailPage />,
+  },
+  {
+    path: "/auth/verify-email",
+    element: <VerifyEmailPage />,
   },
   {
     element: <RouteGuard />,

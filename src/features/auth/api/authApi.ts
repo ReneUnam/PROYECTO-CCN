@@ -1,98 +1,63 @@
-// src/features/auth/api/authApi.ts
 import { supabase } from '@/core/api/supabaseClient';
 
-interface SignUpParams {
+interface TempLoginParams {
     studentId: string;
-    email: string;
-    password: string;
+    tempPassword: string;
 }
 
-// Función de registro
-export const signUp = async ({ studentId, email, password }: SignUpParams) => {
-    // 1️⃣ Normalizar inputs
-    const normalizedStudentId = studentId.trim().toLowerCase();
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedPassword = password.trim();
-
-    if (!normalizedStudentId || !normalizedEmail || !normalizedPassword) {
-        throw new Error('Todos los campos son obligatorios');
-    }
-
-    // 2️⃣ Verificar que el ID esté en allowed_users y no haya sido usado
-    const { data: allowedUser, error: allowedError } = await supabase
-        .from('allowed_users')
+// Verifica las credenciales temporales en profiles
+export const verifyTempCredentials = async ({ studentId, tempPassword }: TempLoginParams) => {
+    const { data: profile, error } = await supabase
+        .from('profiles')
         .select('*')
-        .eq('student_id', normalizedStudentId)
+        .eq('institution_id', studentId)
         .single();
 
-    if (allowedError) throw new Error('ID no encontrado o no autorizado');
-    if (!allowedUser) throw new Error('ID no encontrado');
-    if (allowedUser.used) throw new Error('Este ID ya fue registrado');
+    if (error || !profile) throw new Error('ID no encontrado');
+    if (profile.password_temp !== tempPassword) throw new Error('Contraseña temporal incorrecta');
 
-    // 3️⃣ Crear usuario en Auth **solo con email y password**
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password: normalizedPassword,
-    });
-
-    if (authError) throw new Error(authError.message);
-
-    const userId = authData.user?.id;
-    if (!userId) throw new Error('Error al crear usuario');
-
-    // 4️⃣ Crear perfil vinculado
-    const { error: profileError } = await supabase.from('profiles').insert({
-        id: userId,
-        full_name: allowedUser.full_name,
-        role: allowedUser.role, // student o teacher
-        student_id: normalizedStudentId,
-    });
-
-    if (profileError) throw new Error(profileError.message);
-
-    // 5️⃣ Marcar ID como usado y guardar correo para recuperación
-    const { error: updateError } = await supabase
-        .from('allowed_users')
-        .update({ used: true, email: normalizedEmail })
-        .eq('student_id', normalizedStudentId);
-
-    if (updateError) throw new Error(updateError.message);
-
-    return { userId };
+    return profile;
 };
 
-// Función de inicio de sesión centralizada
+// Crea usuario en Supabase Auth y actualiza is_registered
+export const registerAuthFromTemp = async (profile: any) => {
+  if (profile.is_registered) throw new Error('Usuario ya registrado');
+
+  const emailRedirectTo =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/auth/confirm-email`
+      : undefined;
+
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: profile.email,
+    password: profile.password_temp, // usamos la temporal como contraseña inicial
+    options: { emailRedirectTo },
+  });
+
+  if (authError) throw new Error(authError.message);
+  return authData.user;
+};
+
+// Login normal
 interface SignInParams {
     studentId: string;
     password: string;
 }
 
 export const signIn = async ({ studentId, password }: SignInParams) => {
-    const normalizedStudentId = studentId.trim().toLowerCase();
-    const normalizedPassword = password ?? '';
-
-    if (!normalizedStudentId || !normalizedPassword) {
-        throw new Error('Carnet y contraseña son obligatorios');
-    }
-
-    // Buscar el correo asociado al ID
-    const { data: allowedUser, error: allowedError } = await supabase
-        .from('allowed_users')
-        .select('email')
-        .eq('student_id', normalizedStudentId)
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('email, is_registered')
+        .eq('institution_id', studentId)
         .single();
 
-    if (allowedError || !allowedUser) {
-        throw new Error('ID no encontrado o no autorizado');
-    }
+    if (error || !profile) throw new Error('ID no encontrado');
 
-    const email = allowedUser.email;
-    if (!email) throw new Error('Este ID no tiene un correo asociado');
+    if (!profile.is_registered) throw new Error('Usuario no registrado en Auth');
 
-    // Hacer login con Supabase Auth
     const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password: normalizedPassword,
+        email: profile.email,
+        password,
     });
 
     if (loginError) throw new Error(loginError.message || 'Error al iniciar sesión');
