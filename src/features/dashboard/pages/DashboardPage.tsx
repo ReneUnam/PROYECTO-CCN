@@ -30,14 +30,13 @@ const quickActions = [
     image: "https://er.educause.edu/-/media/images/articles/2024/04/er24_041_headerart_1600x900.jpg",
     route: "/chatbot", 
   },
-  {
-    id: "materials",
-    title: "Materiales",
-    description: "Recursos pedagógicos preparados para tus clases.",
-    image: "https://images.unsplash.com/photo-1581092545360-09a0b0b2d8d2",
-    route: "/materials",
-    allowedRoles: ["teacher"],
-  },
+    {
+      id: 'materials',
+      title: 'Materiales',
+      description: 'Recursos pedagógicos y documentos',
+      route: '/resources',
+      allowedRoles: ['teacher'],
+    },
 ];
 
 const highlights = [

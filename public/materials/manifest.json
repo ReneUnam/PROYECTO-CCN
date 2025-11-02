@@ -1,0 +1,44 @@
+[
+  {
+    "id": "guia-emociones",
+    "title": "Guía de emociones",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/Guia_emociones[1].pdf"
+  },
+  {
+    "id": "como-hablar-con-ninos",
+    "title": "Cómo hablar con niños",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/Como_hablar_con_niños[1].pdf"
+  },
+  {
+    "id": "controlar-cualquier-emocion-antonio-barragan",
+    "title": "Controlar cualquier emoción — Antonio Barragán",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/controlar_cualquier_emoción_-_Antonio_Barragan-1-1[1].pdf"
+  },
+  {
+    "id": "emocionario",
+    "title": "Emocionario",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/emocionario[1].pdf"
+  },
+  {
+    "id": "guia-convivencia-cast",
+    "title": "Guía de convivencia (CAST)",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/guia_convivencia_cast[1].pdf"
+  },
+  {
+    "id": "manual-manejo-estres-ansiedad",
+    "title": "Manual para el manejo efectivo de estrés y ansiedad",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/Manual_para_el_manejo_efectivo_de_estres_y_ansiedad[1].pdf"
+  },
+  {
+    "id": "protocolo-actuacion-situaciones-bullying",
+    "title": "Protocolo de actuación: situaciones de bullying",
+    "description": "Material pedagógico añadido por el profesor.",
+    "file": "pdf/protocolo-actuacion-situaciones-bullying[1].pdf"
+  }
+]
