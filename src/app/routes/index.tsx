@@ -6,7 +6,7 @@ import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { QuestionsPage } from "@/features/questions/pages/QuestionsPage";
 import MaterialsList from '@/features/materials/pages/MaterialsList';
 import { Layout } from "@/core/components/Layout";
-import { RouteGuard } from "./route-guards";
+import { RequireAuth, RequireAdmin } from "./route-guards";
 import { AssignmentSessionPage } from "@/features/questions/pages/AssignmentSessionPage";
 import { JournalHubPage } from "@/features/journal/pages/JournalHubPage";
 import { JournalTypePage } from "@/features/journal/pages/JournalTypePage";
@@ -17,74 +17,36 @@ import ConfirmEmailPage from "@/features/auth/pages/ConfirmEmailPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 
 const router = createBrowserRouter([
+  
+  // Públicas
+  { path: '/login', element: <LoginPage /> },
+  { path: '/terms', element: <TermsAndConditions /> },
+  { path: '/auth/confirm-email', element: <ConfirmEmailPage /> },
+  { path: '/auth/verify-email', element: <VerifyEmailPage /> },
+
+  // Rutas privadas (requiere sesión)
   {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/terms",
-    element: <TermsAndConditions />,
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/auth/confirm-email",
-    element: <ConfirmEmailPage />,
-  },
-  {
-    path: "/auth/verify-email",
-    element: <VerifyEmailPage />,
-  },
-  {
-    element: <RouteGuard />,
+    element: <RequireAuth />,
     children: [
       {
-        // Layout con Navbar + Sidebar + Outlet
         element: <Layout />,
         children: [
-          {
-            path: "/dashboard",
-            element: <DashboardPage />,
-          },
-          {
-            path: "/resources",
-            element: <MaterialsList />,
-          },
-          {
-            path: "/profile",
-            element: <ProfilePage />,
-          },
-          {
-            path: "/questions",
-            element: <QuestionsPage />
-          }, {
-            path: "/questions/session/:id",
-            element: <AssignmentSessionPage />
-          },
-          {
-            path: "/journal",
-            element: <JournalHubPage />,
-          },
-          {
-            path: "/journal/emotions",
-            element: <JournalTypePage type="emotions" />,
-          },
-          {
-            path: "/journal/self-care",
-            element: <JournalTypePage type="self-care" />,
-          },
-          {
-            path: "/journal/session/emotions",
-            element: <JournalEmotionSessionPage />,
-          },
-          {
-            path: "/journal/session/self-care",
-            element: <JournalSelfCareSessionPage />,
-          }
+          { path: "/dashboard", element: <DashboardPage /> },
+          { path: "/resources", element: <MaterialsList /> },
+          { path: "/profile", element: <ProfilePage /> },
+          { path: "/questions", element: <QuestionsPage /> },
+          { path: "/questions/session/:id", element: <AssignmentSessionPage /> },
+          { path: "/journal", element: <JournalHubPage /> },
+          { path: "/journal/emotions", element: <JournalTypePage type="emotions" /> },
+          { path: "/journal/self-care", element: <JournalTypePage type="self-care" /> },
+          { path: "/journal/session/emotions", element: <JournalEmotionSessionPage /> },
+          { path: "/journal/session/self-care", element: <JournalSelfCareSessionPage /> },
 
-          // aquí luego agregas más rutas internas protegidas
+          // Solo administradores
+          {
+            element: <RequireAdmin />,
+            children: [{ path: "/register", element: <RegisterPage /> }],
+          },
         ],
       },
     ],

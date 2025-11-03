@@ -1,22 +1,35 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ccn-blueweb</title>
-      <script>
-      (() => {
-        try {
-          const saved = localStorage.getItem("theme");
-          const theme = saved ? JSON.parse(saved) : "light"; // default claro
-          document.documentElement.classList.toggle("dark", theme === "dark");
-        } catch {}
-      })();
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ccn-blueweb</title>
+  <script>
+    (() => {
+      const KEY = 'theme';
+      const USER_KEY = 'theme:user';
+      if (!localStorage.getItem(USER_KEY) && localStorage.getItem(KEY)) {
+        localStorage.removeItem(KEY);
+      }
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const userSet = localStorage.getItem(USER_KEY) === '1';
+      const stored = localStorage.getItem(KEY);
+      const isDark = userSet ? stored === 'dark' : prefersDark;
+
+      const setDark = (on) => {
+        document.documentElement.classList.toggle('dark', on);
+        document.body.classList.toggle('dark', on);
+      };
+      setDark(isDark);
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

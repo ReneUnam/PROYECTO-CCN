@@ -1,6 +1,6 @@
-import ThemeToggle from "./ThemeToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { Menu } from "lucide-react";
-import logo from "@/assets/logo.png";
+
 
 type Props = { onToggleSidebar?: () => void };
 
@@ -16,8 +16,13 @@ export function Navbar({ onToggleSidebar }: Props) {
         >
           <Menu size={18} />
         </button>
-        <img src={logo} alt="CCN" className="h-8 w-8 rounded-sm" />
-        <h1 className="text-xl font-semibold text-brand-blue">CCN BlueWeb</h1>
+        <img
+          src="/logo.png"
+          alt="Logo"
+          className="h-8 w-8 object-contain logo-stroke-white"
+          style={{ ['--stroke' as any]: '1px' }}
+        />
+        <h1 className="text-xl font-semibold text-tertiary">CCN BlueWeb</h1>
       </div>
       <ThemeToggle />
     </header>

@@ -7,10 +7,10 @@
 @theme {
   --color-brand-blue: #2647a5;
   --color-brand-green: #2fb866;
-  --color-brand-gold: #caa23a;
-
+  
   --color-primary: #2647a5;
   --color-secondary: #2fb866;
+  --color-tertiary: #caa23a;
 
   --color-muted: #ffffff;
   --color-surface: #ffffff;
@@ -18,11 +18,34 @@
   --color-border: #e5e7eb;
 }
 
+/* Contorno nítido (usa la transparencia del PNG) */
+.logo-stroke-white {
+  --stroke: 2px; /* grosor */
+  filter:
+    drop-shadow(var(--stroke) 0 0 #fff)
+    drop-shadow(calc(-1 * var(--stroke)) 0 0 #fff)
+    drop-shadow(0 var(--stroke) 0 #fff)
+    drop-shadow(0 calc(-1 * var(--stroke)) 0 #fff)
+    drop-shadow(var(--stroke) var(--stroke) 0 #fff)
+    drop-shadow(calc(-1 * var(--stroke)) var(--stroke) 0 #fff)
+    drop-shadow(var(--stroke) calc(-1 * var(--stroke)) 0 #fff)
+    drop-shadow(calc(-1 * var(--stroke)) calc(-1 * var(--stroke)) 0 #fff);
+}
+
+/* Brillo suave alternativo */
+.logo-glow-white {
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.9));
+}
+
+
 /* 2) FORZAR los valores efectivos con CSS plano (toman precedencia) */
 :root {
+  --bg-start: #f8fafc;
+  --bg-end: #f1f5f9;
+
   --color-primary: #2647a5;
   --color-secondary: #2fb866;
-
+  --color-tertiary: #2647a5;
   --color-muted: #ffffff;
   --color-surface: #ffffff;
   --color-text: #0f172a;
@@ -30,11 +53,22 @@
 }
 
 html.dark {
+  --bg-start: #020617;
+  --bg-end: #0b1220;
+
   --color-primary: #1b2b6e;
-  --color-secondary: #3f4ac8;
+  --color-secondary: #4d1c9d;
+  --color-tertiary: #2fb866;
 
   --color-muted: #0b1220;
   --color-surface: #0f172a;
   --color-text: #e5e7eb;
   --color-border: #1f2937;
+}
+
+body {
+  background-image: linear-gradient(to bottom, var(--bg-start), var(--bg-end));
+  background-attachment: fixed;
+  color: var(--color-text);
+  transition: background-color 150ms ease, color 150ms ease, background-image 150ms ease;
 }
