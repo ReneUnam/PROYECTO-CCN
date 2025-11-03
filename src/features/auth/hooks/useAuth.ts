@@ -1,51 +1,85 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/core/api/supabaseClient';
 
+export type RoleId = 1 | 2 | 3;
 export interface UserProfile {
-    id: string;
-    full_name: string;
-    role: 'student' | 'teacher' | 'admin';
+  id: string;
+  full_name: string;
+  role_id: RoleId;
+  first_names?: string | null;
+  last_names?: string | null;
+  email?: string | null;
 }
 
 export const useAuth = () => {
-    const [user, setUser] = useState<UserProfile | null>(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const getUserProfile = async () => {
-            const session = supabase.auth.getSession();
-            if (!session) {
-                setUser(null);
-                setLoading(false);
-                return;
-            }
+  useEffect(() => {
+    let active = true;
 
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', (await session).data.session?.user.id)
-                .single();
+    const loadFromSession = async (session: any) => {
+      setLoading(true);
+      try {
+        const authUser = session?.user ?? null;
+        if (!authUser) {
+          if (active) setUser(null);
+          return;
+        }
 
-            if (error) {
-                console.error(error);
-                setUser(null);
-            } else {
-                setUser(data);
-            }
-            setLoading(false);
-        };
+        // 1) por vínculo
+        let { data: profile } = await supabase
+          .from('profiles')
+          .select('id, first_names, last_names, role_id, email, auth_user_id')
+          .eq('auth_user_id', authUser.id)
+          .maybeSingle();
 
-        getUserProfile();
+        // 2) fallback por email + autovínculo
+        if (!profile && authUser.email) {
+          const byEmail = await supabase
+            .from('profiles')
+            .select('id, first_names, last_names, role_id, email, auth_user_id')
+            .eq('email', authUser.email)
+            .maybeSingle();
+          profile = byEmail.data ?? null;
 
-        // Escucha cambios de sesión
-        const { data: listener } = supabase.auth.onAuthStateChange(() => {
-            getUserProfile();
-        });
+          if (profile && !profile.auth_user_id) {
+            await supabase.from('profiles').update({ auth_user_id: authUser.id }).eq('id', profile.id);
+            profile.auth_user_id = authUser.id;
+          }
+        }
 
-        return () => {
-            listener.subscription.unsubscribe();
-        };
-    }, []);
+        const email = profile?.email ?? authUser.email ?? '';
+        const name = `${profile?.first_names ?? ''} ${profile?.last_names ?? ''}`.trim() || (email.split('@')[0] || 'Usuario');
 
-    return { user, loading };
+        if (active) {
+          setUser(
+            profile
+              ? { id: profile.id, full_name: name, role_id: (profile.role_id as RoleId) ?? 3, first_names: profile.first_names, last_names: profile.last_names, email }
+              : { id: authUser.id, full_name: name, role_id: 3, email }
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      await loadFromSession(session);
+    })();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Evita la doble carga inicial en dev
+      if (event === 'INITIAL_SESSION') return;
+      loadFromSession(session);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return { user, loading };
 };

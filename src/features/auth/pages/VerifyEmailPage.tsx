@@ -4,6 +4,7 @@ import { supabase } from '@/core/api/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { markProfileAsRegisteredByEmail } from '@/features/auth/api/authApi';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ export default function VerifyEmailPage() {
     refs[Math.max(0, lastFilled)].current?.focus();
   }
 
-  async function handleVerify(e: React.FormEvent) {
+   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
@@ -90,7 +91,10 @@ export default function VerifyEmailPage() {
       const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'signup' });
       if (error) throw error;
 
-      await markProfileAsRegisteredByEmail(email);
+      // Vincula y marca registrado (una sola vez)
+      await supabase.rpc('link_my_profile').match(() => {});
+      await supabase.rpc('mark_my_profile_registered').match(() => {});
+      await markProfileAsRegisteredByEmail(email).catch(() => {}); // opcional si lo usas en otros flujos
 
       setStep('verified');
       setMsg({ kind: 'ok', text: 'Correo verificado.' });
@@ -114,19 +118,20 @@ export default function VerifyEmailPage() {
     }
   }
 
+
   if (step === 'verified') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border border-slate-200 p-8 text-center">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            {/* ...existing code... */}
+      <div className="min-h-dvh bg-surface text-text grid place-items-center px-4">
+        <div className="w-full max-w-md rounded-2xl bg-surface border border-border shadow-xl p-8 text-center">
+          <div className="mx-auto mb-4 h-12 w-12 text-emerald-600">
+            <CheckCircle2 className="h-12 w-12" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900">¡Correo verificado!</h1>
-          <p className="mt-2 text-sm text-slate-600">Tu cuenta fue activada correctamente.</p>
-          <Button className="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-600" onClick={() => navigate('/dashboard')}>
+          <h1 className="text-2xl font-semibold">¡Correo verificado!</h1>
+          <p className="mt-2 text-sm">Tu cuenta fue activada correctamente.</p>
+          <Button className="mt-6 w-full" onClick={() => navigate('/dashboard')}>
             Ir al dashboard
           </Button>
-          <button className="mt-3 w-full text-sm text-slate-500 hover:text-slate-700" onClick={() => navigate('/login')}>
+          <button className="mt-3 w-full text-sm text-muted-foreground hover:underline" onClick={() => navigate('/login')}>
             Volver al login
           </button>
         </div>
@@ -178,13 +183,12 @@ export default function VerifyEmailPage() {
 
           {msg && (
             <div
-              className={`mt-4 rounded-lg border px-3 py-2 text-sm ${
-                msg.kind === 'error'
-                  ? 'border-red-200 bg-red-50 text-red-700'
-                  : msg.kind === 'ok'
+              className={`mt-4 rounded-lg border px-3 py-2 text-sm ${msg.kind === 'error'
+                ? 'border-red-200 bg-red-50 text-red-700'
+                : msg.kind === 'ok'
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                   : 'border-sky-200 bg-sky-50 text-sky-700'
-              }`}
+                }`}
             >
               {msg.text}
             </div>

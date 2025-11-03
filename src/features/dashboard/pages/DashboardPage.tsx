@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useAuth } from '@/features/auth/hooks/useAuth';
-
 const quickActions = [
   {
     id: "surveys",
@@ -28,15 +27,16 @@ const quickActions = [
     title: "Asistente virtual",
     description: "Habla con nuestro asistente emocional. Está aquí para escucharte.",
     image: "https://er.educause.edu/-/media/images/articles/2024/04/er24_041_headerart_1600x900.jpg",
-    route: "/chatbot", 
+    route: "/chatbot",
   },
-    {
-      id: 'materials',
-      title: 'Materiales',
-      description: 'Recursos pedagógicos y documentos',
-      route: '/resources',
-      allowedRoles: ['teacher'],
-    },
+  {
+    id: 'materials',
+    title: 'Materiales',
+    description: 'Recursos pedagógicos y documentos',
+    route: '/resources',
+    // allowed solo para role_id 2 (teacher)
+    allowedRoleIds: [2],
+  },
 ];
 
 const highlights = [
@@ -46,23 +46,16 @@ const highlights = [
 ];
 
 export function DashboardPage() {
-  const { user, loading } = useAuth();
-  const role = user?.role ?? 'student';
-  const displayName = user?.full_name ?? 'Usuario123';
 
-  const visibleActions = quickActions.filter((a) => !a.allowedRoles || a.allowedRoles.includes(role));
-
-  if (loading) {
-    return (
-      <section className="mx-auto max-w-6xl space-y-10 text-text">
-        <p>Cargando...</p>
-      </section>
-    );
-  }
+  const { user } = useAuth();
+  const roleId = user?.role_id ?? 3; // 1=admin,2=teacher,3=student
+  const isAdmin = roleId === 1;
+  const displayName = user?.full_name ?? 'Usuario';
+  const visibleActions = quickActions.filter(a => isAdmin || !a.allowedRoleIds || a.allowedRoleIds.includes(roleId));
 
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">
-      {/* Hero con gradiente que sigue los tokens del tema */}
+      {/* ...existing code... */}
       <section className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-lg">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
@@ -99,7 +92,6 @@ export function DashboardPage() {
           <p className="text-sm">Selecciona una tarjeta para continuar con tu siguiente actividad.</p>
         </header>
 
-        {/* 2 columnas en md+ (2x2 para 4 items) con altura fija */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {visibleActions.map((card) => (
             <Link
@@ -107,6 +99,7 @@ export function DashboardPage() {
               to={card.route}
               className="group relative flex h-56 w-full flex-col justify-end overflow-hidden rounded-3xl bg-surface text-left shadow border border-border transition hover:-translate-y-1 hover:shadow-lg"
             >
+              {/* ...existing code... */}
               {card.image && (
                 <div
                   className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
@@ -124,7 +117,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {/* Consejo del día */}
+      {/* ...existing code... */}
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <p className="text-sm">
           Consejo del día: prioriza 10 minutos de respiración consciente.{" "}
