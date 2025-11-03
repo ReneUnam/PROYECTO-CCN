@@ -119,49 +119,55 @@ export default function VerifyEmailPage() {
   }
 
 
-  if (step === 'verified') {
+    if (step === 'verified') {
     return (
-      <div className="min-h-dvh bg-surface text-text grid place-items-center px-4">
-        <div className="w-full max-w-md rounded-2xl bg-surface border border-border shadow-xl p-8 text-center">
-          <div className="mx-auto mb-4 h-12 w-12 text-emerald-600">
+      <div className="min-h-dvh grid place-items-center px-4">
+        <div className="w-full max-w-md rounded-2xl border shadow-xl p-8 text-center
+                        bg-[color:var(--color-surface)] border-[var(--color-border)] text-[color:var(--color-text)]">
+          <div className="mx-auto mb-4 h-12 w-12 text-emerald-500 dark:text-emerald-400">
             <CheckCircle2 className="h-12 w-12" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-semibold">¡Correo verificado!</h1>
           <p className="mt-2 text-sm">Tu cuenta fue activada correctamente.</p>
           <Button className="mt-6 w-full" onClick={() => navigate('/dashboard')}>
-            Ir al dashboard
+            Ir al inicio
           </Button>
-          <button className="mt-3 w-full text-sm text-muted-foreground hover:underline" onClick={() => navigate('/login')}>
+          {/* <button
+            className="mt-3 w-full text-sm text-[color:var(--color-text)]/70 hover:text-[color:var(--color-text)]"
+            onClick={() => navigate('/login')}
+          >
             Volver al login
-          </button>
+          </button> */}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border border-slate-200 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-2xl shadow-xl overflow-hidden
+                      bg-[color:var(--color-surface)] border border-[var(--color-border)]">
         {/* Header */}
-        <div className="bg-[linear-gradient(135deg,#2647a7_0%,#2f66d0_100%)] text-white p-6">
+        <div className="bg-gradient-to-r from-[color:var(--color-primary)] to-[color:var(--color-secondary)] text-white p-6">
           <div className="flex items-center gap-3">
             <img
               src="https://wvwdhnmsxxzvhszwdivj.supabase.co/storage/v1/object/public/public-assets/logo_blueweb.png"
               alt="Colegio Central de Nicaragua"
-              className="h-10 w-10 rounded-xl bg-white p-1 shadow-sm ring-1 ring-white/70" // badge blanco para contraste
+              className="h-10 w-10 rounded-xl bg-white/5 p-1 shadow-sm ring-1 ring-white/30 logo-stroke-white"
+              style={{ ['--stroke' as any]: '1.5px' }}
             />
             <div>
               <h2 className="text-lg font-semibold">Verificar correo</h2>
-              <p className="text-xs text-white/80">Ingresa el código enviado a tu email</p>
+              <p className="text-xs text-white/85">Ingresa el código enviado a tu email</p>
             </div>
           </div>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleVerify} className="p-6">
+        <form onSubmit={handleVerify} className="p-6 text-[color:var(--color-text)]">
           {email && (
-            <p className="mb-4 text-sm text-slate-600">
-              Enviamos un código a: <span className="font-medium text-slate-800">{maskedEmail}</span>
+            <p className="mb-4 text-sm text-[color:var(--color-text)]/80">
+              Enviamos un código a: <span className="font-medium text-[color:var(--color-text)]">{maskedEmail}</span>
             </p>
           )}
 
@@ -176,25 +182,29 @@ export default function VerifyEmailPage() {
                 onPaste={onPaste}
                 inputMode="numeric"
                 maxLength={1}
-                className="h-12 w-12 text-center text-lg font-semibold tracking-widest rounded-xl border-slate-300 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-emerald-600" // foco al verde
+                className="h-12 w-12 text-center text-lg font-semibold tracking-widest rounded-xl
+                           border border-[var(--color-border)] bg-[color:var(--color-surface)]
+                           text-[color:var(--color-text)]
+                           focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[color:var(--color-primary)]"
               />
             ))}
           </div>
 
           {msg && (
             <div
-              className={`mt-4 rounded-lg border px-3 py-2 text-sm ${msg.kind === 'error'
-                ? 'border-red-200 bg-red-50 text-red-700'
-                : msg.kind === 'ok'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : 'border-sky-200 bg-sky-50 text-sky-700'
-                }`}
+              className={`mt-4 rounded-lg border px-3 py-2 text-sm ${
+                msg.kind === 'error'
+                  ? 'border-red-500/40 bg-red-500/10 text-red-500 dark:text-red-400'
+                  : msg.kind === 'ok'
+                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'border-[color:var(--color-primary)]/40 bg-[color:var(--color-primary)]/10 text-[color:var(--color-tertiary)]'
+              }`}
             >
               {msg.text}
             </div>
           )}
 
-          <Button type="submit" disabled={loading} className="mt-5 w-full bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-600">
+          <Button type="submit" disabled={loading} className="mt-5 w-full">
             {loading ? 'Verificando…' : 'Verificar código'}
           </Button>
 
@@ -203,11 +213,15 @@ export default function VerifyEmailPage() {
               type="button"
               disabled={cooldown > 0}
               onClick={handleResend}
-              className={`text-emerald-700 hover:underline disabled:text-slate-400`} // enlace acorde al nuevo color
+              className="text-[color:var(--color-tertiary)] hover:underline disabled:opacity-50"
             >
               {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar código'}
             </button>
-            <button type="button" onClick={() => navigate('/login')} className="text-slate-500 hover:text-slate-700">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-[color:var(--color-text)]/70 hover:text-[color:var(--color-text)]"
+            >
               Volver al login
             </button>
           </div>
