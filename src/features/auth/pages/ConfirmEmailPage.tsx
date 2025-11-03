@@ -49,10 +49,9 @@ export default function ConfirmEmailPage() {
 export const markProfileAsRegisteredByEmail = async (email: string) => {
   const { error } = await supabase
     .from('profiles')
-    .update({ is_registered: true }) // no borrar password_temp
+    .update({ is_registered: true })
     .eq('email', email);
-
-  if (error) throw new Error('No se pudo actualizar el perfil tras confirmar el correo.');
+  if (error) throw new Error('No se pudo actualizar el perfil.');
 };
 
 // export const markProfileAsRegistered = async (email: string) => {

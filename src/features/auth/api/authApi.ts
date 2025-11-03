@@ -19,23 +19,17 @@ export const verifyTempCredentials = async ({ studentId, tempPassword }: TempLog
     return profile;
 };
 
-// Crea usuario en Supabase Auth y actualiza is_registered
+// Enviar correo con OTP (sin redirect)
 export const registerAuthFromTemp = async (profile: any) => {
   if (profile.is_registered) throw new Error('Usuario ya registrado');
 
-  const emailRedirectTo =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/auth/confirm-email`
-      : undefined;
-
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: profile.email,
-    password: profile.password_temp, // usamos la temporal como contraseña inicial
-    options: { emailRedirectTo },
+    password: profile.password_temp, // temporal como inicial
   });
 
-  if (authError) throw new Error(authError.message);
-  return authData.user;
+  if (error) throw new Error(error.message);
+  return data.user;
 };
 
 // Login normal
@@ -63,4 +57,13 @@ export const signIn = async ({ studentId, password }: SignInParams) => {
     if (loginError) throw new Error(loginError.message || 'Error al iniciar sesión');
 
     return { success: true };
+};
+
+// Marcar perfil como registrado (no limpia password_temp)
+export const markProfileAsRegisteredByEmail = async (email: string) => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_registered: true })
+    .eq('email', email);
+  if (error) throw new Error('No se pudo actualizar el perfil.');
 };

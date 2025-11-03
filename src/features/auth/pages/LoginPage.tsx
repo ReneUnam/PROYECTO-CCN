@@ -18,31 +18,29 @@ export default function LoginPage() {
 
     // const [pendingProfile, setPendingProfile] = useState<any>(null);
 
-     const handleLogin = async () => {
-    try {
-      setMsg('');
-      setIsLoading(true);
+    const handleLogin = async () => {
+        try {
+            setMsg(''); setIsLoading(true);
 
-      // 1) Verificar carnet + contraseña (puede ser la temporal en el primer acceso)
-      const profile = await verifyTempCredentials({ studentId, tempPassword: password });
+            // Primer acceso (usa la temporal)
+            const profile = await verifyTempCredentials({ studentId, tempPassword: password });
 
-      if (!profile.is_registered) {
-        // 2) Crear cuenta en Auth y enviar correo de verificación
-        await registerAuthFromTemp(profile);
-        // 3) Mostrar pantalla informativa mientras revisa su correo
-        navigate('/auth/verify-email', { replace: true, state: { email: profile.email } });
-        return;
-      }
+            if (!profile.is_registered) {
+                await registerAuthFromTemp(profile); // envía código OTP al correo
+                sessionStorage.setItem('pendingEmail', profile.email);
+                navigate('/auth/verify-email', { replace: true, state: { email: profile.email } });
+                return;
+            }
 
-      // 4) Login normal
-      await signIn({ studentId, password });
-      navigate('/dashboard');
-    } catch (err: any) {
-      setMsg(err.message || 'Ocurrió un error al iniciar sesión.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            // Login normal
+            await signIn({ studentId, password });
+            navigate('/dashboard');
+        } catch (err: any) {
+            setMsg(err.message || 'Error al iniciar sesión.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
 
     return (
