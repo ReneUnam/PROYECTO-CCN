@@ -1,89 +1,81 @@
-import { useMemo, useState, type JSX } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState, type JSX } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  ListChecks,
-  Clock,
-  CalendarClock,
-  Users,
-  HelpCircle,
-  CheckCircle2,
-  AlertTriangle,
+  ListChecks, Clock, CalendarClock, Users, HelpCircle, CheckCircle2, AlertTriangle,
 } from "lucide-react";
+import { getMyAssignments, startAssignment, type Assignment as ApiAssignment } from "@/features/questions/api/assignmentsApi";
 
 type Status = "new" | "overdue" | "completed";
 
-type Assignment = {
-  id: string;
-  title: string;
-  group: string;
-  questions: number;
-  due: string; // solo visual
-  status: Status;
+type UiItem = ApiAssignment & {
+  _status: Status;
+  _dueText: string;
 };
-
-const MOCK: Assignment[] = [
-  { id: "a1", title: "Autoconocimiento I", group: "Grupo 2A", questions: 10, due: "Hoy 12:00", status: "new" },
-  { id: "a2", title: "Manejo de emociones", group: "Grupo 2B", questions: 8, due: "Mañana 10:00", status: "new" },
-  { id: "a3", title: "Comunicación asertiva", group: "Grupo 3A", questions: 12, due: "Ayer 17:00", status: "overdue" },
-  { id: "a4", title: "Trabajo en equipo", group: "Grupo 1C", questions: 6, due: "15 Oct", status: "completed" },
-];
 
 export function QuestionsPage() {
   const [tab, setTab] = useState<Status>("new");
+  const [data, setData] = useState<ApiAssignment[]>([]);
+  const navigate = useNavigate();
 
-  const tabs: { key: Status; label: string }[] = [
-    { key: "new", label: "Nuevas" },
-    { key: "overdue", label: "Vencidas" },
-    { key: "completed", label: "Completado" },
-  ];
+  useEffect(() => {
+    getMyAssignments().then(setData).catch(() => setData([]));
+  }, []);
 
-  const items = useMemo(() => MOCK.filter((i) => i.status === tab), [tab]);
+  const items = useMemo<UiItem[]>(() => {
+    const now = new Date();
+    return (data ?? []).map((a) => {
+      const end = a.end_at ? new Date(a.end_at) : null;
+      const status: Status =
+        a.completed >= a.max_attempts ? "completed" : end && end < now ? "overdue" : "new";
+      return {
+        ...a,
+        _status: status,
+        _dueText: end ? end.toLocaleString() : "Sin fecha",
+      };
+    }).filter((x) => x._status === tab);
+  }, [data, tab]);
 
   const badgeByStatus: Record<Status, { className: string; icon: JSX.Element; text: string }> = {
-    new: {
-      className: "border border-blue-200 bg-blue-50 text-blue-700",
-      icon: <Clock className="h-3.5 w-3.5" />,
-      text: "Nueva",
-    },
-    overdue: {
-      className: "border border-red-200 bg-red-50 text-red-700",
-      icon: <AlertTriangle className="h-3.5 w-3.5" />,
-      text: "Vencida",
-    },
-    completed: {
-      className: "border border-emerald-200 bg-emerald-50 text-emerald-700",
-      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-      text: "Completada",
-    },
+    new:       { className: "border border-blue-200 bg-blue-50 text-blue-700",       icon: <Clock className="h-3.5 w-3.5" />,        text: "Nueva" },
+    overdue:   { className: "border border-red-200 bg-red-50 text-red-700",          icon: <AlertTriangle className="h-3.5 w-3.5" />, text: "Vencida" },
+    completed: { className: "border border-emerald-200 bg-emerald-50 text-emerald-700", icon: <CheckCircle2 className="h-3.5 w-3.5" />, text: "Completada" },
   };
 
-  return (
-    <section className="mx-auto max-w-6xl space-y-6 text-text">
-      {/* Encabezado */}
-      <div className="flex items-center justify-between">
+  const openAssignment = async (a: UiItem) => {
+    try {
+      const sessionId = await startAssignment(a.assignment_id);
+      navigate(`/questions/session/${a.assignment_id}?session=${sessionId}`);
+    } catch (e: any) {
+      alert(e.message || "No se pudo iniciar la sesión");
+    }
+  };
+
+    return (
+    <section className="mx-auto max-w-6xl space-y-6 text-text px-4 sm:px-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-muted grid place-items-center">
+          <div className="h-10 w-10 rounded-full bg-muted grid place-items-center shrink-0">
             <HelpCircle className="h-5 w-5 text-text/70" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold">Preguntas asignadas</h1>
+            <h1 className="text-xl sm:text-lg font-semibold leading-tight">Preguntas asignadas</h1>
             <p className="text-sm text-text/70">Revisa y completa tus actividades</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {tabs.map((t) => (
+        {/* Tabs scrollable en móvil */}
+        <div className="flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {(["new","overdue","completed"] as const).map((t) => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
+              key={t}
+              onClick={() => setTab(t)}
               className={[
-                "rounded-full px-4 py-1.5 text-sm transition-colors",
-                tab === t.key
-                  ? "bg-primary text-white"
-                  : "bg-muted text-text hover:bg-muted/80",
+                "shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors",
+                tab===t ? "bg-primary text-white" : "bg-muted text-text hover:bg-muted/80",
               ].join(" ")}
             >
-              {t.label}
+              {t === "new" ? "Nuevas" : t === "overdue" ? "Vencidas" : "Completado"}
             </button>
           ))}
         </div>
@@ -92,47 +84,39 @@ export function QuestionsPage() {
       {/* Lista */}
       <div className="space-y-4">
         {items.map((a) => {
-          const badge = badgeByStatus[a.status];
+          const badge = badgeByStatus[a._status];
           return (
             <article
-              key={a.id}
+              key={a.assignment_id}
               className="rounded-xl border border-border bg-surface p-4 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                {/* Info */}
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center text-primary">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center text-primary shrink-0">
                     <ListChecks className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-medium">{a.title}</h3>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-text/80">
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {a.group}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <HelpCircle className="h-4 w-4" />
-                        {a.questions} preguntas
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarClock className="h-4 w-4" />
-                        Entrega: {a.due}
-                      </span>
+                    <h3 className="font-medium">{a.survey_name}</h3>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text/80">
+                      <span className="inline-flex items-center gap-1"><Users className="h-4 w-4" />—</span>
+                      <span className="inline-flex items-center gap-1"><CalendarClock className="h-4 w-4" />Entrega: {a._dueText}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
+                {/* Acciones */}
+                <div className="flex items-center gap-3 sm:justify-end">
                   <span className={["inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs", badge.className].join(" ")}>
-                    {badge.icon}
-                    {badge.text}
+                    {badge.icon}{badge.text}
                   </span>
-                  <Link
-                    to={`/questions/session/${a.id}`}
+                  <button
+                    onClick={() => openAssignment(a)}
                     className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary/90"
+                    disabled={a._status === "completed"}
                   >
-                    Abrir
-                  </Link>
+                    {a._status === "completed" ? "Completado" : "Abrir"}
+                  </button>
                 </div>
               </div>
             </article>

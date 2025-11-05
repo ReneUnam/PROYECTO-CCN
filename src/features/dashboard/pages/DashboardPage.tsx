@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { PendingAssignments } from "@/features/questions/components/PendingAssignments";
 const quickActions = [
   {
     id: "surveys",
@@ -55,7 +56,6 @@ export function DashboardPage() {
 
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">
-      {/* ...existing code... */}
       <section className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-lg">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
@@ -87,6 +87,7 @@ export function DashboardPage() {
 
       {/* Accesos rápidos */}
       <section className="space-y-6">
+        <PendingAssignments />
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold">Accesos rápidos</h2>
           <p className="text-sm">Selecciona una tarjeta para continuar con tu siguiente actividad.</p>

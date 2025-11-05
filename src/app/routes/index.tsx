@@ -15,6 +15,7 @@ import { JournalSelfCareSessionPage } from "@/features/journal/pages/sessions/Jo
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 import ConfirmEmailPage from "@/features/auth/pages/ConfirmEmailPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
+import AdminAssignmentsPage from "@/features/questions/pages/AdminAssignmentsPage";
 
 const router = createBrowserRouter([
   
@@ -31,11 +32,11 @@ const router = createBrowserRouter([
       {
         element: <Layout />,
         children: [
-          { path: "/dashboard", element: <DashboardPage /> },
+          { path: "/dashboard", element:<DashboardPage /> },
           { path: "/resources", element: <MaterialsList /> },
           { path: "/profile", element: <ProfilePage /> },
           { path: "/questions", element: <QuestionsPage /> },
-          { path: "/questions/session/:id", element: <AssignmentSessionPage /> },
+          { path: "/questions/session/:assignmentId", element: <AssignmentSessionPage /> },
           { path: "/journal", element: <JournalHubPage /> },
           { path: "/journal/emotions", element: <JournalTypePage type="emotions" /> },
           { path: "/journal/self-care", element: <JournalTypePage type="self-care" /> },
@@ -45,7 +46,9 @@ const router = createBrowserRouter([
           // Solo administradores
           {
             element: <RequireAdmin />,
-            children: [{ path: "/register", element: <RegisterPage /> }],
+            children: [{ path: "/register", element: <RegisterPage /> },
+              {path: "/assignments/manage", element: <AdminAssignmentsPage /> },
+            ],
           },
         ],
       },
