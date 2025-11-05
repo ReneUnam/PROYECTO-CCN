@@ -1,4 +1,4 @@
-// Reemplaza el selector combinado por campos separados (fecha y hora) más cómodos en móvil.
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
