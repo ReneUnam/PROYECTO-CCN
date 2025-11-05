@@ -20,7 +20,13 @@
 
       const setDark = (on) => {
         document.documentElement.classList.toggle('dark', on);
-        document.body.classList.toggle('dark', on);
+        if (document.body) {
+          document.body.classList.toggle('dark', on);
+        } else {
+          document.addEventListener('DOMContentLoaded', () => {
+            document.body?.classList.toggle('dark', on);
+          }, { once: true });
+        }
       };
       setDark(isDark);
     })();
