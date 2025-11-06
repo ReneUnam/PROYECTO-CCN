@@ -36,7 +36,7 @@ const quickActions = [
     description: 'Recursos pedagógicos y documentos',
     route: '/resources',
     // allowed solo para role_id 2 (teacher)
-    allowedRoleIds: [2],
+    allowedRoleIds: [1,2],
   },
 ];
 
