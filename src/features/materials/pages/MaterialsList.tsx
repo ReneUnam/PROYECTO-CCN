@@ -3,6 +3,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { AddMaterialModal } from '../components/AddMaterialModal';
 import { EditMaterialModal } from '../components/EditMaterialModal';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { listMaterials, deleteMaterial } from '../api/materialsApi';
 
 type MaterialItem = {
@@ -47,6 +48,8 @@ export default function MaterialsList() {
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<null | { id: string; title: string; description?: string | null }>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<null | { id: string; file_path?: string | null; thumbnail_path?: string | null }>(null);
 
   // Fetch from DB (materials table); if empty, list will be []
   async function refresh() {
@@ -152,15 +155,9 @@ export default function MaterialsList() {
                         variant="outline"
                         size="sm"
                         className="w-full border-red-200 text-red-600 hover:bg-red-50"
-                        onClick={async () => {
-                          const ok = window.confirm('¿Eliminar este material? Esta acción no se puede deshacer.');
-                          if (!ok) return;
-                          try {
-                            await deleteMaterial({ id: it.id, filePath: it.file_path, thumbnailPath: it.thumbnail_path ?? undefined });
-                            await refresh();
-                          } catch (err: any) {
-                            alert(err?.message || 'No se pudo eliminar el material');
-                          }
+                        onClick={() => {
+                          setToDelete({ id: it.id, file_path: it.file_path, thumbnail_path: it.thumbnail_path ?? null });
+                          setConfirmOpen(true);
                         }}
                       >
                         Eliminar
@@ -181,6 +178,25 @@ export default function MaterialsList() {
         onClose={() => setEditOpen(false)}
         onUpdated={refresh}
         initial={editing}
+      />
+      <ConfirmDialog
+        open={confirmOpen}
+        title="¿Eliminar este material?"
+        description="Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        danger
+        onCancel={() => {
+          setConfirmOpen(false);
+          setToDelete(null);
+        }}
+        onConfirm={async () => {
+          if (!toDelete) return;
+          await deleteMaterial({ id: toDelete.id, filePath: toDelete.file_path ?? undefined, thumbnailPath: toDelete.thumbnail_path ?? undefined });
+          setConfirmOpen(false);
+          setToDelete(null);
+          await refresh();
+        }}
       />
     </section>
   );
