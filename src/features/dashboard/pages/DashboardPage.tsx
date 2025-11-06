@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { PendingAssignments } from "@/features/questions/components/PendingAssignments";
+import { useEffect, useState } from "react";
+import { supabase } from "@/core/api/supabaseClient";
+import { getMyStreakAll } from "@/features/journal/api/journalApi";
+
 const quickActions = [
   {
     id: "surveys",
@@ -40,12 +44,6 @@ const quickActions = [
   },
 ];
 
-const highlights = [
-  { id: "mood", title: "Estado actual", value: "Equilibrado" },
-  { id: "streak", title: "Racha de hábitos", value: "7 días" },
-  { id: "sessions", title: "Sesiones completadas", value: "15" },
-];
-
 export function DashboardPage() {
 
   const { user } = useAuth();
@@ -54,6 +52,28 @@ export function DashboardPage() {
   const displayName = user?.full_name ?? 'Usuario';
   const visibleActions = quickActions.filter(a => isAdmin || !a.allowedRoleIds || a.allowedRoleIds.includes(roleId));
 
+  const [journalStreak, setJournalStreak] = useState<number>(0);
+  const [answeredToday, setAnsweredToday] = useState<number>(0);
+  const [completedQuestionSessions, setCompletedQuestionSessions] = useState<number>(0);
+  
+  useEffect(() => {
+    (async () => {
+      const streaks = await getMyStreakAll().catch(() => []);
+      const maxStreak = Math.max(0, ...streaks.map((s: any) => s.current_streak ?? 0));
+      setJournalStreak(maxStreak);
+
+      // Preguntas contestadas HOY por el usuario
+      const { data, error } = await supabase.rpc("my_answered_questions_today");
+      if (!error) setAnsweredToday(Number(data) || 0);
+    })();
+  }, []);
+
+  const highlights = [
+    { id: "mood", title: "Estado actual", value: "Equilibrado" },
+    { id: "streak", title: "Racha del diario", value: `${journalStreak} día${journalStreak === 1 ? "" : "s"}` },
+    { id: "answers", title: "Preguntas contestadas hoy", value: String(answeredToday) },
+  ];
+  
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">
       <section className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-lg">
