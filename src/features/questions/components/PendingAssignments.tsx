@@ -19,7 +19,8 @@ export function PendingAssignments() {
     setLoading(true);
     try {
       const sessionId = await startAssignment(a.assignment_id);
-      navigate(`/assignments/${a.assignment_id}?session=${sessionId}`);
+      navigate(`/questions/session/${a.assignment_id}?session=${sessionId}`); 
+     
     } finally {
       setLoading(false);
     }
