@@ -107,47 +107,65 @@ export default function MaterialsList() {
                   {it.description && <p className="mt-1 text-sm text-gray-600">{it.description}</p>}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setPreviewUrl(fileUrl);
-                        setPreviewOpen(true);
-                      }}
-                      className="rounded-md bg-indigo-50 px-3 py-1 text-sm text-indigo-700 hover:bg-indigo-100"
-                    >
-                      Previsualizar
-                    </button>
-                    <a href={fileUrl} download className="rounded-md px-3 py-1 text-sm text-indigo-600 hover:underline">Descargar</a>
-                  </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {/* Fila 1 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setPreviewUrl(fileUrl);
+                      setPreviewOpen(true);
+                    }}
+                  >
+                    Previsualizar
+                  </Button>
+                  <a
+                    href={fileUrl}
+                    download
+                    className="w-full inline-flex items-center justify-center select-none rounded-xl font-medium
+                               transition-[transform,box-shadow,background-color,opacity] duration-150 ease-out
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]
+                               focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-surface)]
+                               cursor-pointer border border-[color:var(--color-border)] h-9 px-3 text-sm
+                               bg-[color:var(--color-surface)] text-[color:var(--color-text)] shadow-sm
+                               hover:-translate-y-0.5 hover:shadow-md hover:bg-black/5 dark:hover:bg-white/10 active:translate-y-[1px]"
+                  >
+                    Descargar
+                  </a>
 
+                  {/* Fila 2 (solo admin) */}
                   {canManage && (
-                    <button
-                      onClick={() => {
-                        setEditing({ id: it.id, title: it.title, description: it.description });
-                        setEditOpen(true);
-                      }}
-                      className="text-sm text-gray-600 hover:underline"
-                    >
-                      Editar
-                    </button>
-                  )}
-                  {canManage && (
-                    <button
-                      onClick={async () => {
-                        const ok = window.confirm('¿Eliminar este material? Esta acción no se puede deshacer.');
-                        if (!ok) return;
-                        try {
-                          await deleteMaterial({ id: it.id, filePath: it.file_path, thumbnailPath: it.thumbnail_path ?? undefined });
-                          await refresh();
-                        } catch (err: any) {
-                          alert(err?.message || 'No se pudo eliminar el material');
-                        }
-                      }}
-                      className="ml-3 text-sm text-red-600 hover:underline"
-                    >
-                      Eliminar
-                    </button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setEditing({ id: it.id, title: it.title, description: it.description });
+                          setEditOpen(true);
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                        onClick={async () => {
+                          const ok = window.confirm('¿Eliminar este material? Esta acción no se puede deshacer.');
+                          if (!ok) return;
+                          try {
+                            await deleteMaterial({ id: it.id, filePath: it.file_path, thumbnailPath: it.thumbnail_path ?? undefined });
+                            await refresh();
+                          } catch (err: any) {
+                            alert(err?.message || 'No se pudo eliminar el material');
+                          }
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                    </>
                   )}
                 </div>
               </article>
