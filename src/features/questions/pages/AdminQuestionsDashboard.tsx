@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/core/api/supabaseClient";
+import { FullScreenLoader } from "@/components/FullScreenLoader"; 
 
 type Overview = { assignment_id:number; survey_name:string; start_at:string|null; end_at:string|null; recipients:number; started:number; completed:number; };
 type Row = { assignment_id:number; survey_name:string; question_id:number; question_text:string; session_id:string|null; session_status:string|null; response_value:any; response_date:string|null; first_names:string|null; last_names:string|null; };
@@ -91,7 +92,7 @@ export default function AdminQuestionsDashboard() {
                     <td>{r.session_status || "—"}</td>
                   </tr>
                 ))}
-                {!rows.length && (<tr><td className="py-6 text-text/60" colSpan={5}>{loading ? "Cargando…" : "Sin respuestas"}</td></tr>)}
+                {!rows.length && (<tr><td className="py-6 text-text/60" colSpan={5}>{loading ? <FullScreenLoader /> : "Sin respuestas"}</td></tr>)}
               </tbody>
             </table>
           </div>

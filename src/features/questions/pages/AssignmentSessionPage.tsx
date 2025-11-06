@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, CheckCircle2, Save, Clock, User, CalendarClock, AlertCircle, HelpCircle } from "lucide-react";
 import { startAssignment, getAssignmentDetail, getSurveyQuestions, getSessionResponses, upsertResponse, completeSession } from "../api/assignmentsApi";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 
 type Q = { id: number; prompt: string };
 
@@ -92,7 +93,8 @@ export function AssignmentSessionPage() {
     }
   }
 
-  if (!total) return <div className="p-6 text-text">Cargando…</div>;
+  if (!sessionId || !surveyId || !total) return <FullScreenLoader />;
+
 
   return (
     <section className="mx-auto max-w-6xl text-text">
