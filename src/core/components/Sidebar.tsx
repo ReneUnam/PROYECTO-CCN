@@ -124,7 +124,7 @@ export function Sidebar({ open }: SidebarProps) {
                     className={`ml-auto h-4 w-4 transition-transform ${adminMenuOpen ? "rotate-180" : ""}`}
                   />
                 </button>
-                {adminMenuOpen && (
+                  {adminMenuOpen && (
                   <ul className="mt-1 space-y-1 pl-6 text-sm">
                       <li>
                         <NavLink
@@ -141,19 +141,22 @@ export function Sidebar({ open }: SidebarProps) {
                           <span>Resultados de preguntas</span>
                         </NavLink>
                       </li>
-                      <NavLink
-                        to="/admin/assignments/manage"
-                        className={({ isActive }) =>
-                          [
-                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                            "hover:bg-primary/10",
-                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                          ].join(" ")
-                        }
-                      >
-                        <ListChecks className="h-4 w-4" />
-                        <span>Sesiones de preguntas</span>
-                      </NavLink>
+                      {/* Sesiones de preguntas (envuelto en <li>) */}
+                      <li>
+                        <NavLink
+                          to="/admin/assignments/manage"
+                          className={({ isActive }) =>
+                            [
+                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                              "hover:bg-primary/10",
+                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ")
+                          }
+                        >
+                          <ListChecks className="h-4 w-4" />
+                          <span>Sesiones de preguntas</span>
+                        </NavLink>
+                      </li>
                     <li>
                       <NavLink
                         to="/admin/questions/manage"
@@ -167,6 +170,22 @@ export function Sidebar({ open }: SidebarProps) {
                       >
                         <ClipboardList className="h-4 w-4" />
                         <span>Gestión general</span>
+                      </NavLink>
+                    </li>
+                    {/* Nuevo: Administración del Diario */}
+                    <li>
+                      <NavLink
+                        to="/admin/journal"
+                        className={({ isActive }) =>
+                          [
+                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                            "hover:bg-primary/10",
+                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                          ].join(" ")
+                        }
+                      >
+                        <NotebookPen className="h-4 w-4" />
+                        <span>Gestión del diario</span>
                       </NavLink>
                     </li>
                   </ul>

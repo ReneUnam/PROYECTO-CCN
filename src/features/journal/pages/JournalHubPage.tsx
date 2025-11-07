@@ -1,25 +1,20 @@
-// ...existing code...
 import { Link } from "react-router-dom";
-export function JournalHubPage() {
-  const cards = [
-    {
-      key: "emotions",
-      title: "Diario emocional",
-      description: "Registra emociones, sentimientos y sensaciones con emojis.",
-      icon: "😌",
-      route: "/journal/emotions",
-      stats: { streak: 5, pending: 1, drafts: 2 },
-    },
-    {
-      key: "self-care",
-      title: "Diario de autocuido",
-      description: "Evalúa energía, sueño, actividad física y autocalificación.",
-      icon: "🌿",
-      route: "/journal/self-care",
-      stats: { streak: 3, pending: 0, drafts: 1 },
-    },
-  ];
+import { useEffect, useState } from "react";
+import { getMyStreakAll } from "@/features/journal/api/journalApi";
 
+export function JournalHubPage() {
+  const [streaks, setStreaks] = useState<any>({ emotions: { current_streak: 0 }, "self-care": { current_streak: 0 } });
+  useEffect(() => {
+    (async () => {
+      const e = await getMyStreakAll("emotions").catch(() => null);
+      const s = await getMyStreakAll("self-care").catch(() => null);
+      setStreaks({ emotions: e ?? { current_streak: 0 }, "self-care": s ?? { current_streak: 0 } });
+    })();
+  }, []);
+  const cards = [
+    { key: "emotions", title: "Diario emocional", description: "Registra emociones, sentimientos y sensaciones con emojis.", icon: "😌", route: "/journal/emotions", stats: { streak: streaks.emotions?.current_streak ?? 0, pending: 0, drafts: 0 } },
+    { key: "self-care", title: "Diario de autocuido", description: "Evalúa energía, sueño, actividad física y autocalificación.", icon: "🌿", route: "/journal/self-care", stats: { streak: streaks["self-care"]?.current_streak ?? 0, pending: 0, drafts: 0 } },
+  ];
   return (
     <section className="mx-auto max-w-6xl space-y-6 text-text">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

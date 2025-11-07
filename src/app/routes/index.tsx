@@ -17,6 +17,7 @@ import ConfirmEmailPage from "@/features/auth/pages/ConfirmEmailPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 import AdminAssignmentsPage from "@/features/questions/pages/AdminAssignmentsPage";
 import AdminQuestionsDashboard from "@/features/questions/pages/AdminQuestionsDashboard";
+import { JournalAdminPage } from "@/features/journal/pages/JournalAdminPage";
 
 const router = createBrowserRouter([
   
@@ -47,9 +48,11 @@ const router = createBrowserRouter([
           // Solo administradores
           {
             element: <RequireAdmin />,
-            children: [{ path: "/register", element: <RegisterPage /> },
-              {path: "/admin/assignments/manage", element: <AdminAssignmentsPage /> },
+            children: [
+              { path: "/register", element: <RegisterPage /> },
+              { path: "/admin/assignments/manage", element: <AdminAssignmentsPage /> },
               { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
+              { path: "/admin/journal", element: <JournalAdminPage /> },
             ],
           },
         ],

@@ -54,7 +54,6 @@ export function DashboardPage() {
 
   const [journalStreak, setJournalStreak] = useState<number>(0);
   const [answeredToday, setAnsweredToday] = useState<number>(0);
-  const [completedQuestionSessions, setCompletedQuestionSessions] = useState<number>(0);
   
   useEffect(() => {
     (async () => {

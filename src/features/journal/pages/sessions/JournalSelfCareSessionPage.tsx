@@ -1,143 +1,181 @@
-import { useState } from "react";
-import {
-    ChevronLeft,
-    Save,
-    CheckCircle2,
-    Activity,
-    Bed,
-    Dumbbell,
-    Droplets,
-    Sparkles,
-    Smile,
-} from "lucide-react";
-import { ChipToggle } from "@/features/journal/components/ChipToggle";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronLeft, Save, CheckCircle2 } from "lucide-react";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { LikertScale } from "@/features/journal/components/LikertScale";
-
-const CHECK_GROUPS = [
-    {
-        id: "sleep",
-        title: "Sueño",
-        icon: <Bed className="h-4 w-4" />,
-        options: ["Dormí suficiente", "Dormí poco", "Dormí mal", "Me desperté descansado/a", "Me desperté cansado/a"],
-    },
-    {
-        id: "activity",
-        title: "Actividad física",
-        icon: <Dumbbell className="h-4 w-4" />,
-        options: ["Hice ejercicio", "Caminé", "Me moví poco", "Descansé"],
-    },
-    {
-        id: "nutrition",
-        title: "Alimentación",
-        icon: <Droplets className="h-4 w-4" />,
-        options: ["Comí saludable", "Comí demasiado", "Comí poco", "Bebí suficiente agua"],
-    },
-    {
-        id: "emotional-care",
-        title: "Autocuidado emocional",
-        icon: <Sparkles className="h-4 w-4" />,
-        options: ["Medité / Respiré", "Tiempo para mí", "Hablé con alguien", "Evité redes/noticias", "Hice algo que disfruto"],
-    },
-];
+import { ChipToggle } from "@/features/journal/components/ChipToggle";
+import { startJournalEntry, getActiveItems, upsertAnswer, completeEntry } from "@/features/journal/api/journalApi";
+import { clearLocalAnswers, loadLocalAnswers, saveLocalAnswers, useBeforeUnloadDirty } from "@/features/journal/hooks/useJournalAutosave";
 
 export function JournalSelfCareSessionPage() {
-    const [energy, setEnergy] = useState<number | undefined>();
-    const [dayScore, setDayScore] = useState<number | undefined>();
-    const [selected, setSelected] = useState<Record<string, Set<string>>>({});
+    const navigate = useNavigate();
+    const [sp] = useSearchParams();
+    const [entryId, setEntryId] = useState<string | null>(sp.get("entry"));
+    const [items, setItems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const toggle = (groupId: string, option: string) => {
+    const [selected, setSelected] = useState<Record<number, Set<string>>>({});
+    const [scales, setScales] = useState<Record<number, number | undefined>>({});
+
+    const totalRequired = items.filter((i) => i.required).length;
+    const totalAnswered = useMemo(() => {
+        return items.filter((i) =>
+            i.kind === "scale" ? scales[i.item_id] != null : (selected[i.item_id]?.size ?? 0) > 0
+        ).length;
+    }, [items, selected, scales]);
+
+    const hasPendingRequired = useMemo(() => {
+        const reqIds = new Set(items.filter((i) => i.required).map((i) => i.item_id));
+        for (const id of reqIds) {
+            const it = items.find((x) => x.item_id === id)!;
+            if (it.kind === "scale" && scales[id] == null) return true;
+            if (it.kind !== "scale" && (!selected[id] || selected[id].size === 0)) return true;
+        }
+        return false;
+    }, [items, selected, scales]);
+    useBeforeUnloadDirty(hasPendingRequired);
+
+    const getPoints = (it: any) => {
+        const min = Number(it.scale_min ?? 1);
+        const max = Number(it.scale_max ?? 5);
+        const raw = Math.max(2, (max - min + 1) || 5);
+        return Math.min(5, raw);
+    };
+    const getLabels = (it: any) => {
+        const count = getPoints(it);
+        if (Array.isArray(it.scale_labels) && it.scale_labels.length === count) return it.scale_labels.map((s: string) => s || "");
+        const left = it.scale_left_label || "Bajo";
+        const right = it.scale_right_label || "Alto";
+        if (count === 5) return [left, "", "Medio", "", right];
+        if (count === 4) return [left, "", "", right];
+        if (count === 3) return [left, "Medio", right];
+        return [left, right];
+    };
+
+    useEffect(() => {
+        (async () => {
+            setLoading(true);
+            try {
+                const id = entryId ?? (await startJournalEntry("self-care"));
+                setEntryId(id);
+                const its = await getActiveItems("self-care");
+                setItems(its);
+
+                const saved = id ? loadLocalAnswers(id) : {};
+                if (saved.selected) {
+                    setSelected(
+                        Object.fromEntries(Object.entries(saved.selected).map(([k, v]) => [Number(k), new Set(v as string[])]))
+                    );
+                }
+                if (saved.scales) setScales(saved.scales);
+            } finally {
+                setLoading(false);
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (!entryId) return;
+        const toSave = {
+            selected: Object.fromEntries(Object.entries(selected).map(([k, v]) => [k, Array.from(v)])),
+            scales,
+        };
+        saveLocalAnswers(entryId, toSave);
+    }, [entryId, selected, scales]);
+
+    if (loading) return <FullScreenLoader />;
+
+    const toggleOption = async (itemId: number, key: string, multi: boolean) => {
         setSelected((prev) => {
-            const set = new Set(prev[groupId] ?? []);
-            set.has(option) ? set.delete(option) : set.add(option);
-            return { ...prev, [groupId]: set };
+            const next = new Set(prev[itemId] ?? []);
+            if (next.has(key)) next.delete(key);
+            else {
+                if (!multi) next.clear();
+                next.add(key);
+            }
+            if (entryId) void upsertAnswer(entryId, itemId, { options: Array.from(next) });
+            return { ...prev, [itemId]: next };
         });
+    };
+
+    const setScale = async (itemId: number, v: number) => {
+        setScales((s) => {
+            const next = { ...s, [itemId]: v };
+            if (entryId) void upsertAnswer(entryId, itemId, { scale: v });
+            return next;
+        });
+    };
+
+    const onSaveDraft = () => navigate("/journal");
+    const onFinish = async () => {
+        if (!entryId) return;
+        await completeEntry(entryId);
+        clearLocalAnswers(entryId);
+        navigate("/journal");
     };
 
     return (
         <section className="mx-auto max-w-6xl text-text">
-            <header className="sticky top-0 z-10 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
+            <header className="sticky top-0 z-10 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur">
                 <div className="flex items-center justify-between gap-3">
-                    <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted">
+                    <button type="button" onClick={() => navigate(-1)} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted">
                         <ChevronLeft className="h-4 w-4" />
                     </button>
                     <div className="flex-1">
                         <h1 className="text-base font-semibold">Diario de autocuido</h1>
-                        <p className="text-xs text-text/70">Registra energía, hábitos y calificación del día.</p>
+                        <p className="text-xs text-text/70">Respondidas: {Math.min(totalAnswered, totalRequired)}/{totalRequired}</p>
                     </div>
                 </div>
             </header>
 
             <div className="space-y-6 p-4">
-                <section className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                        <Activity className="h-4 w-4 text-primary" />
-                        Energía física
-                    </div>
-                    <p className="text-xs text-text/70 mb-3">Selecciona el nivel de energía general.</p>
-                    <LikertScale
-                        name="energy"
-                        value={energy}
-                        onChange={setEnergy}
-                        labels={["Muy baja", "Baja", "Media", "Alta", "Muy alta"]}
-                    />
-                </section>
+                {items.map((it) => (
+                    <section key={it.item_id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+                        <h2 className="text-sm font-semibold">{it.prompt}</h2>
+                        {!!it.helper && <p className="text-xs text-text/70">{it.helper}</p>}
 
-                {CHECK_GROUPS.map((group) => {
-                    const set = selected[group.id] ?? new Set<string>();
-                    return (
-                        <section key={group.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-                            <div className="flex items-center gap-2 text-sm font-semibold">
-                                {group.icon}
-                                {group.title}
+                        {it.kind === "scale" ? (
+                            <div className="mt-3">
+                                <LikertScale
+                                    name={`s-${it.item_id}`}
+                                    points={getPoints(it)}
+                                    value={scales[it.item_id]}
+                                    onChange={(v) => setScale(it.item_id, v)}
+                                    labels={getLabels(it)}
+                                />
                             </div>
-                            <p className="text-xs text-text/70 mb-3">Selecciona todo lo que aplicó hoy.</p>
-                            <div className="flex flex-wrap gap-2">
-                                {group.options.map((opt) => (
-                                    <ChipToggle
-                                        key={opt}
-                                        label={opt}
-                                        selected={set.has(opt)}
-                                        onClick={() => toggle(group.id, opt)}
-                                    />
-                                ))}
+                        ) : (
+                            <div className="mt-3 flex flex-wrap justify-center gap-2">
+                                {(it.options ?? []).map((opt: any) => {
+                                    const set = selected[it.item_id] ?? new Set<string>();
+                                    const active = set.has(opt.key);
+                                    return (
+                                        <ChipToggle key={opt.key} active={active} onClick={() => toggleOption(it.item_id, opt.key, !!it.multi_select)}>
+                                            <span className="flex items-center gap-1">
+                                                {opt.emoji && <span>{opt.emoji}</span>}
+                                                <span>{opt.label ?? opt.key}</span>
+                                            </span>
+                                        </ChipToggle>
+                                    );
+                                })}
                             </div>
-                        </section>
-                    );
-                })}
-
-                <section className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                        <Smile className="h-4 w-4 text-primary" />
-                        Auto calificación del día
-                    </div>
-                    <p className="text-xs text-text/70 mb-3">Evalúa el día en general.</p>
-                    <LikertScale
-                        name="day-score"
-                        value={dayScore}
-                        onChange={setDayScore}
-                        labels={["Muy malo", "Malo", "Regular", "Bueno", "Excelente"]}
-                    />
-                </section>
-
-                <section className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-                    <h2 className="text-sm font-semibold">Notas</h2>
-                    <textarea
-                        rows={4}
-                        className="mt-3 w-full rounded-lg border border-border bg-muted/60 p-3 text-sm outline-none ring-primary/30 focus:ring"
-                        placeholder="Agrega detalles, logros o retos del día..."
-                    />
-                </section>
+                        )}
+                    </section>
+                ))}
             </div>
 
-            <footer className="sticky bottom-0 border-t border-border bg-surface/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
-                <div className="mx-auto flex max-w-6xl items-center justify-end gap-2">
-                    <button className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted">
-                        <Save className="h-4 w-4" />
-                        Guardar borrador
+            <footer className="sticky bottom-0 border-t border-border bg-surface/90 px-4 py-3 backdrop-blur">
+                <div className="mx-auto flex max-w-6xl flex-col items-stretch justify-end gap-2 sm:flex-row">
+                    <button onClick={onSaveDraft} className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted">
+                        <Save className="h-4 w-4" /> Guardar borrador
                     </button>
-                    <button className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-600/90">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Finalizar
+                    <button
+                        onClick={onFinish}
+                        disabled={hasPendingRequired}
+                        className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-600/90 disabled:opacity-60"
+                    >
+                        <CheckCircle2 className="h-4 w-4" /> Finalizar
                     </button>
                 </div>
             </footer>

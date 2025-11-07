@@ -1,27 +1,35 @@
 import { cn } from "@/lib/utils";
-import type { JSX } from "react";
+import type { ReactNode } from "react";
 
 type ChipToggleProps = {
-  label: string | JSX.Element;
+  // Puedes pasar contenido como label o como children
+  label?: ReactNode;
+  children?: ReactNode;
+  // Soporta ambas formas: active (nuevo) o selected (compat)
+  active?: boolean;
   selected?: boolean;
-  onClick?: () => void;
+  // Permite handlers async
+  onClick?: () => void | Promise<void>;
   className?: string;
 };
 
-export function ChipToggle({ label, selected, onClick, className }: ChipToggleProps) {
+export function ChipToggle({ label, children, active, selected, onClick, className }: ChipToggleProps) {
+  const isActive = (selected ?? active) ?? false;
+  const content = label ?? children;
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         "rounded-full border px-3 py-1.5 text-sm transition-colors",
-        selected
+        isActive
           ? "border-transparent bg-primary text-white"
           : "border-border bg-surface text-text hover:bg-muted",
         className
       )}
     >
-      {label}
+      {content}
     </button>
   );
 }
