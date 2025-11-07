@@ -7,8 +7,12 @@ import { Copy, NotebookPen, Pencil, Trash2 } from "lucide-react";
 import { OptionEditor } from "@/features/journal/components/OptionEditor";
 import { cn } from "@/lib/utils";
 import { adminDeleteVersion, adminForceDeleteVersion, adminRenameVersion } from "@/features/journal/api/journalApi";
+import { useConfirm } from "@/components/confirm/ComfirmProvider";
+import { useToast } from "@/components/toast/ToastProvider";
 
 export function JournalAdminPage() {
+  const confirm = useConfirm();
+  const { success, info, warning, error } = useToast();
   const [loading, setLoading] = useState(true);
   const [forms, setForms] = useState<any[]>([]);
   const [selectedForm, setSelectedForm] = useState<any | null>(null);
@@ -27,6 +31,24 @@ export function JournalAdminPage() {
     // normaliza largo
     return Array.from({ length: count }, (_, i) => (buf[i] ?? ""));
   };
+
+  async function handleDeleteItem(itId: number) {
+    const ok = await confirm({
+      title: "Eliminar pregunta",
+      message: "¿Seguro que deseas eliminar esta pregunta? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
+    await adminDeleteItem(itId);
+    setItems((xs) => xs.filter((x) => x.id !== itId));
+    setDraftLabels((s) => {
+      const next = { ...s };
+      delete next[itId];
+      return next;
+    });
+  }
+
 
   const hasNonEmptyName = (v: any) => typeof v?.name === "string" && v.name.trim().length > 0;
 
@@ -88,18 +110,29 @@ export function JournalAdminPage() {
     const justCreated = vs.find((v: any) => v.id === vid);
     const defaultName = generateDefaultDraftName(vs);
     if (justCreated && !hasNonEmptyName(justCreated)) {
-      try { await adminRenameVersion(vid, defaultName); } catch { }
+      try { await adminRenameVersion(vid, defaultName); } catch {}
     }
     const refreshed = await adminGetVersions(selectedForm.id);
     setVersions(refreshed);
     setSelectedVersion(refreshed.find((v: any) => v.id === vid) ?? refreshed[0]);
+    info("Se creó un borrador");
   }
 
   async function onPublish() {
     if (!selectedVersion) return;
+    const ok = await confirm({
+      title: "Publicar versión",
+      message: "La versión actual publicada será archivada y esta pasará a publicada.",
+      confirmText: "Publicar",
+      variant: "publish",
+    });
+    if (!ok) return;
     await adminPublish(selectedForm.type, selectedVersion.id);
     const vs = await adminGetVersions(selectedForm.id);
     setVersions(vs);
+    const published = vs.find((v: any) => v.id === selectedVersion.id) ?? vs.find((v: any) => v.status === "published");
+    setSelectedVersion(published ?? null);
+    success("Versión publicada");
   }
 
   async function onAddItem(kind: "scale" | "options") {
@@ -217,6 +250,11 @@ export function JournalAdminPage() {
                       Publicado
                     </span>
                   )}
+                  {isArchived && (
+                    <span className="rounded bg-gray-500 px-1.5 py-0.5 text-[10px] text-white shadow-sm transition">
+                      Archivado
+                    </span>
+                  )}
 
                   {!isPublished && !isEditing && (
                     <button
@@ -236,7 +274,7 @@ export function JournalAdminPage() {
                       disabled={isDeleting}
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const ok = window.confirm("¿Eliminar este borrador?");
+                        const ok = await confirm({ title: "Eliminar borrador", message: "¿Eliminar este borrador de versión?", confirmText: "Eliminar", variant: "danger" });
                         if (!ok) return;
                         setDeleting(v.id);
                         try {
@@ -249,6 +287,7 @@ export function JournalAdminPage() {
                             }
                             return next;
                           });
+                          success("Borrador eliminado");
                         } finally {
                           setDeleting(null);
                         }
@@ -266,10 +305,10 @@ export function JournalAdminPage() {
                       disabled={isDeleting}
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const ok = window.confirm("Esta versión está publicada. ¿Eliminarla definitivamente?");
+                        const ok = await confirm({ title: "Eliminar versión publicada", message: "Esta versión está publicada.\n¿Realmente deseas eliminarla?", confirmText: "Continuar", variant: "danger" });
                         if (!ok) return;
-                        const confirmText = prompt('Escribe "ELIMINAR" para confirmar:');
-                        if (confirmText !== "ELIMINAR") return;
+                        const second = await confirm({ title: "Confirmación adicional", message: "Escribe ELIMINAR para confirmar borrado definitivo.", confirmText: "Eliminar", variant: "danger", requireTextMatch: "ELIMINAR" });
+                        if (!second) return;
                         setDeleting(v.id);
                         try {
                           await adminForceDeleteVersion(v.id);
@@ -344,15 +383,7 @@ export function JournalAdminPage() {
                     type="button"
                     title="Quitar"
                     onClick={async () => {
-                      const ok = window.confirm("¿Eliminar esta pregunta?");
-                      if (!ok) return;
-                      await adminDeleteItem(it.id);
-                      setItems((xs) => xs.filter((x) => x.id !== it.id));
-                      setDraftLabels((s) => {
-                        const next = { ...s };
-                        delete next[it.id];
-                        return next;
-                      });
+                      await handleDeleteItem(it.id)
                     }}
                     className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm transition
                                hover:bg-red-50 hover:text-red-600 hover:border-red-300 hover:shadow-sm active:scale-95 dark:hover:bg-red-500/10 hover:cursor-pointer"
@@ -392,7 +423,7 @@ export function JournalAdminPage() {
                               try {
                                 const saved = await adminUpsertItem({ ...it, scale_labels: next });
                                 setItems((xs) => xs.map((x) => (x.id === it.id ? saved : x)));
-                              } catch {}
+                              } catch { }
                             }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") (e.target as HTMLInputElement).blur();

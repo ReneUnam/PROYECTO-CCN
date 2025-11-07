@@ -72,3 +72,21 @@ body {
   color: var(--color-text);
   transition: background-color 150ms ease, color 150ms ease, background-image 150ms ease;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popIn {
+  0% { opacity: 0; transform: translateY(8px) scale(.96); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastIn {
+  0% { opacity: 0; transform: translateY(-10px) translateX(8px) scale(.98); }
+  60% { opacity: 1; transform: translateY(2px) translateX(0) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fadeIn { animation: fadeIn .2s ease; }
+.animate-popIn { animation: popIn .22s cubic-bezier(.2,.8,.2,1); }
+.animate-toastIn { animation: toastIn .25s cubic-bezier(.2,.8,.2,1); }
