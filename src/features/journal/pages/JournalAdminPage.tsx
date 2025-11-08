@@ -7,7 +7,7 @@ import { Copy, NotebookPen, Pencil, Trash2 } from "lucide-react";
 import { OptionEditor } from "@/features/journal/components/OptionEditor";
 import { cn } from "@/lib/utils";
 import { adminDeleteVersion, adminForceDeleteVersion, adminRenameVersion } from "@/features/journal/api/journalApi";
-import { useConfirm } from "@/components/confirm/ComfirmProvider";
+import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import { useToast } from "@/components/toast/ToastProvider";
 
 export function JournalAdminPage() {

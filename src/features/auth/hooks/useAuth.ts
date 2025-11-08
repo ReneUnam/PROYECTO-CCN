@@ -71,6 +71,7 @@ export const useAuth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Evita la doble carga inicial en dev
+        console.log("onAuthStateChange:", event);
       if (event === 'INITIAL_SESSION') return;
       loadFromSession(session);
     });
