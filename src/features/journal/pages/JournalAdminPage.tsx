@@ -12,7 +12,7 @@ import { useToast } from "@/components/toast/ToastProvider";
 
 export function JournalAdminPage() {
   const confirm = useConfirm();
-  const { success, info, warning, error } = useToast();
+  const { success, info} = useToast();
   const [loading, setLoading] = useState(true);
   const [forms, setForms] = useState<any[]>([]);
   const [selectedForm, setSelectedForm] = useState<any | null>(null);

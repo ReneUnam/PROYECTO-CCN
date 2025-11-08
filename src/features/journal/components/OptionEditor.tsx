@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, Plus, Settings2 } from "lucide-react";
+import { X, Plus, } from "lucide-react";
 import { EmojiPicker } from "./EmojiPicker";
 
 export type Option = { key: string; label: string; emoji?: string };
@@ -18,7 +18,7 @@ const slugify = (s: string) =>
 
 export function OptionEditor({ value, onChange }: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced] = useState(false);
   const list = useMemo(() => value, [value]);
 
   const uniqueKey = (base: string, idx: number) => {
@@ -63,7 +63,7 @@ export function OptionEditor({ value, onChange }: Props) {
           <button
             type="button"
             onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-            className="grid h-8 w-8 place-items-center rounded-md border border-border bg-surface text-lg"
+            className="grid h-8 w-8 place-items-center rounded-md border border-border bg-surface text-lg hover:cursor-pointer"
             title="Elegir emoji"
           >
             {opt.emoji ?? "🙂"}
@@ -116,25 +116,26 @@ export function OptionEditor({ value, onChange }: Props) {
         <button
           type="button"
           onClick={addNew}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm transition
+             hover:bg-muted hover:shadow-sm active:scale-[0.97] hover:cursor-pointer"
         >
           <Plus className="h-3 w-3" /> Agregar opción
         </button>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => setShowAdvanced((s) => !s)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
         >
           <Settings2 className="h-3 w-3" /> {showAdvanced ? "Ocultar claves (avanzado)" : "Mostrar claves (avanzado)"}
-        </button>
+        </button> */}
       </div>
 
-      {!showAdvanced && (
+      {/* {!showAdvanced && (
         <p className="text-[11px] text-text/60">
           La clave se genera automáticamente a partir de la etiqueta. Puedes editarla en “Mostrar claves (avanzado)”.
         </p>
-      )}
+      )} */}
     </div>
   );
 }

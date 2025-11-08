@@ -28,14 +28,14 @@ export function EmojiPicker({ onPick }: Props) {
     return (
         <div className="w-64">
             <input
-                className="mb-2 h-8 w-full rounded-md border border-border bg-surface px-2 text-sm"
+                className="mb-2 h-8 w-full rounded-md border border-border bg-surface px-2 text-sm hover:cursor-pointer"
                 placeholder="Buscar emoji (ej. feliz, fuego, ok)"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
             />
             <div className="grid max-h-48 grid-cols-8 gap-1 overflow-y-auto">
                 {results.map((e, i) => (
-                    <button key={`${e}-${i}`} className="grid h-8 w-8 place-items-center rounded hover:bg-muted" onClick={() => onPick(e)} type="button">
+                    <button key={`${e}-${i}`} className="grid h-8 w-8 place-items-center rounded hover:bg-muted hover:cursor-pointer" onClick={() => onPick(e)} type="button">
                         {e}
                     </button>
                 ))}
