@@ -1,10 +1,8 @@
-import { useMemo, useState } from "react";
-import { X, Plus, } from "lucide-react";
+import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { X, Plus, Smile} from "lucide-react";
 import { EmojiPicker } from "./EmojiPicker";
 
 export type Option = { key: string; label: string; emoji?: string };
-
-type Props = { value: Option[]; onChange: (next: Option[]) => void };
 
 // helpers
 const slugify = (s: string) =>
@@ -16,7 +14,51 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "") || "opcion";
 
+  type Props = {
+  value: Option[];
+  onChange: (next: Option[]) => void;
+};
+
+type LocalOption = Option & { _id: string; _buffer: string };
+
 export function OptionEditor({ value, onChange }: Props) {
+    const [local, setLocal] = useState<LocalOption[]>(() =>
+    value.map((o, i) => ({ ...o, _id: crypto.randomUUID(), _buffer: o.label }))
+  );
+   // Sincroniza cuando value cambia externamente (por ejemplo carga inicial)
+  useEffect(() => {
+    setLocal((prev) => {
+      // Mantener ids existentes por coincidencia de key
+      return value.map((o) => {
+        const found = prev.find((p) => p.key === o.key);
+        return found
+          ? { ...found, label: o.label, emoji: o.emoji, _buffer: o.label }
+          : { ...o, _id: crypto.randomUUID(), _buffer: o.label };
+      });
+    });
+  }, [value]);
+
+    // Commit: actualiza key (slug) y emite onChange
+  const commit = useCallback(
+    (id: string) => {
+      setLocal((prev) => {
+        const nextLocal = prev.map((o) => {
+          if (o._id !== id) return o;
+            const finalLabel = o._buffer.trim();
+            return {
+              ...o,
+              label: finalLabel,
+              key: slugify(finalLabel), // sólo aquí cambia la key
+            };
+        });
+        // Emitir lista sin campos internos
+        onChange(nextLocal.map(({ _id, _buffer, ...rest }) => rest));
+        return nextLocal;
+      });
+    },
+    [onChange]
+  );
+
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [showAdvanced] = useState(false);
   const list = useMemo(() => value, [value]);
@@ -31,6 +73,13 @@ export function OptionEditor({ value, onChange }: Props) {
     return k;
   };
 
+    // Editar buffer sin cambiar key ni emitir onChange inmediato
+  const editBuffer = (id: string, txt: string) => {
+    setLocal((prev) =>
+      prev.map((o) => (o._id === id ? { ...o, _buffer: txt } : o))
+    );
+  };
+
   const update = (idx: number, patch: Partial<Option>) => {
     const next = [...list];
     const prev = next[idx];
@@ -43,99 +92,86 @@ export function OptionEditor({ value, onChange }: Props) {
     onChange(next);
   };
 
+    const remove = (id: string) => {
+    setLocal((prev) => {
+      const next = prev.filter((o) => o._id !== id);
+      onChange(next.map(({ _id, _buffer, ...rest }) => rest));
+      return next;
+    });
+  };
+
   const removeAt = (idx: number) => onChange(list.filter((_, i) => i !== idx));
-  const addNew = () =>
-    onChange([
-      ...list,
-      {
-        key: uniqueKey(`opt-${Math.random().toString(36).slice(2, 5)}`, list.length),
+    const addNew = () => {
+    setLocal((prev) => {
+      const newOpt: LocalOption = {
+        _id: crypto.randomUUID(),
+        key: slugify("opcion-" + (prev.length + 1)),
         label: "Opción",
         emoji: "✨",
-      },
-    ]);
+        _buffer: "Opción",
+      };
+      const next = [...prev, newOpt];
+      onChange(next.map(({ _id, _buffer, ...rest }) => rest));
+      return next;
+    });
+  };
 
-  return (
+   return (
     <div className="space-y-2">
-      {list.length === 0 && <p className="text-xs text-text/60">Sin opciones. Agrega al menos una.</p>}
-
-      {list.map((opt, idx) => (
-        <div key={idx} className="flex flex-wrap items-center gap-2">
+      {local.map((opt) => (
+        <div
+          key={opt._id} // clave estable, NO la mutable slug/key
+          className="flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1"
+        >
           <button
             type="button"
-            onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-            className="grid h-8 w-8 place-items-center rounded-md border border-border bg-surface text-lg hover:cursor-pointer"
-            title="Elegir emoji"
+            className="grid h-8 w-8 place-items-center rounded-md border border-border text-sm"
+            onClick={() => {
+              // Alternar emoji rápido (placeholder simple)
+              const nextEmoji = opt.emoji === "👍" ? "✨" : "👍";
+              setLocal((prev) =>
+                prev.map((o) => (o._id === opt._id ? { ...o, emoji: nextEmoji } : o))
+              );
+              onChange(
+                local.map(({ _id, _buffer, ...rest }) =>
+                  rest.key === opt.key ? { ...rest, emoji: nextEmoji } : rest
+                )
+              );
+            }}
           >
-            {opt.emoji ?? "🙂"}
+            {opt.emoji || <Smile className="h-4 w-4 opacity-60" />}
           </button>
-
           <input
-            className="h-8 flex-1 rounded-md border border-border bg-surface px-2 text-sm"
-            placeholder="Etiqueta visible"
-            value={opt.label}
-            onChange={(e) => update(idx, { label: e.target.value })}
+            value={opt._buffer}
+            onChange={(e) => editBuffer(opt._id, e.target.value)}
+            onBlur={() => commit(opt._id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commit(opt._id);
+              }
+            }}
+            className="flex-1 h-8 rounded-md border border-transparent bg-transparent px-2 text-sm outline-none focus:border-primary"
+            placeholder="Texto de la opción"
           />
-
-          {showAdvanced && (
-            <input
-              className="h-8 w-44 rounded-md border border-dashed border-border bg-surface px-2 text-xs"
-              placeholder="key (única)"
-              value={opt.key}
-              onChange={(e) => {
-                const base = slugify(e.target.value);
-                update(idx, { key: uniqueKey(base, idx) });
-              }}
-            />
-          )}
-
           <button
             type="button"
-            onClick={() => removeAt(idx)}
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm transition
-                               hover:bg-red-50 hover:text-red-600 hover:border-red-300 hover:shadow-sm active:scale-95 dark:hover:bg-red-500/10 hover:cursor-pointer"
+            onClick={() => remove(opt._id)}
+            className="grid h-8 w-8 place-items-center rounded-md text-red-600 hover:bg-red-600/10"
+            aria-label="Quitar opción"
           >
-            <X className="h-4 w-4 text-red-600" />
+            <X className="h-4 w-4" />
           </button>
-
-          {openIdx === idx && (
-            <div className="relative w-full">
-              <div className="absolute z-10 mt-1 rounded-md border border-border bg-surface p-2 shadow">
-                <EmojiPicker
-                  onPick={(e) => {
-                    update(idx, { emoji: e });
-                    setOpenIdx(null);
-                  }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       ))}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={addNew}
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm transition
-             hover:bg-muted hover:shadow-sm active:scale-[0.97] hover:cursor-pointer"
-        >
-          <Plus className="h-3 w-3" /> Agregar opción
-        </button>
-
-        {/* <button
-          type="button"
-          onClick={() => setShowAdvanced((s) => !s)}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
-        >
-          <Settings2 className="h-3 w-3" /> {showAdvanced ? "Ocultar claves (avanzado)" : "Mostrar claves (avanzado)"}
-        </button> */}
-      </div>
-
-      {/* {!showAdvanced && (
-        <p className="text-[11px] text-text/60">
-          La clave se genera automáticamente a partir de la etiqueta. Puedes editarla en “Mostrar claves (avanzado)”.
-        </p>
-      )} */}
+      <button
+        type="button"
+        onClick={addNew}
+        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+      >
+        <Plus className="h-3 w-3" /> Agregar opción
+      </button>
     </div>
   );
 }

@@ -1,7 +1,14 @@
 import { supabase } from "@/core/api/supabaseClient";
 
-export type JournalType = "emotions" | "self-care";
 
+export type JournalType = "emotions" | "self-care";
+export type JournalItemPatch = {
+  id: string;
+  scale_min?: number | null;
+  scale_max?: number | null;
+  scale_labels?: string[] | null;
+  // ...otros campos de item...
+};
 export async function startJournalEntry(type: JournalType) {
     const { data, error } = await supabase.rpc("journal_start_entry", { p_type: type });
     if (error) throw error;
@@ -9,13 +16,13 @@ export async function startJournalEntry(type: JournalType) {
 }
 
 export async function getActiveItems(type: JournalType) {
-    const { data, error } = await supabase
-        .from("v_journal_active_items")
-        .select("*")
-        .eq("type", type)
-        .order("sort_order");
-    if (error) throw error;
-    return data ?? [];
+  const { data, error } = await supabase
+    .from("v_journal_active_items")
+    .select("*")
+    .eq("type", type)
+    .order("sort_order");
+  if (error) throw error;
+  return (data ?? []).map(normalizeItem);
 }
 
 export async function upsertAnswer(entryId: string, itemId: number, value: any) {
@@ -72,20 +79,40 @@ export async function adminGetVersions(formId: number) {
     return data ?? [];
 }
 
+export const normalizeItem = (raw: any) => {
+  const toArr = (v: any): string[] => {
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string") { try { const x = JSON.parse(v); return Array.isArray(x) ? x : []; } catch { return []; } }
+    return [];
+  };
+  return {
+    ...raw,
+    scale_min: raw?.scale_min ?? 1,
+    scale_max: raw?.scale_max ?? 5,
+    scale_labels: toArr(raw?.scale_labels),
+  };
+};
+
+// Admin: obtener items de una versión
 export async function adminGetItems(versionId: number) {
-    const { data, error } = await supabase
-        .from("journal_items")
-        .select("*")
-        .eq("version_id", versionId)
-        .order("sort_order");
-    if (error) throw error;
-    return data ?? [];
+  const { data, error } = await supabase
+    .from("journal_items")
+    .select("*")
+    .eq("version_id", versionId)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(normalizeItem);
 }
 
-export async function adminUpsertItem(item: any) {
-    const { data, error } = await supabase.from("journal_items").upsert(item).select().single();
-    if (error) throw error;
-    return data;
+// Admin: upsert de item (devuelve item normalizado)
+export async function adminUpsertItem(payload: any) {
+  const { data, error } = await supabase
+    .from("journal_items")
+    .upsert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizeItem(data);
 }
 
 export async function adminDeleteItem(id: number) {
@@ -177,4 +204,41 @@ export async function adminForceDeleteVersion(versionId: number) {
         p_version_id: versionId,
     });
     if (error) throw error;
+}
+
+export async function adminUpdateItemScale(itemId: number, payload: {
+  scale_min: number;
+  scale_max: number;
+  scale_labels: string[];
+}) {
+  const { data, error } = await supabase
+    .from("journal_items")
+    .update({
+      scale_min: payload.scale_min,
+      scale_max: payload.scale_max,
+      scale_labels: payload.scale_labels,
+    })
+    .eq("id", itemId)
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizeItem(data);
+}
+
+// Admin: actualizar sólo escala (min/max/labels)
+export async function updateJournalItemScale(itemId: number, params: {
+  scale_min: number; scale_max: number; scale_labels: string[];
+}) {
+  const { data, error } = await supabase
+    .from("journal_items")
+    .update({
+      scale_min: params.scale_min,
+      scale_max: params.scale_max,
+      scale_labels: params.scale_labels,
+    })
+    .eq("id", itemId)
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizeItem(data);
 }

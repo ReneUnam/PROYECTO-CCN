@@ -41,16 +41,20 @@ export function JournalSelfCareSessionPage() {
         const raw = Math.max(2, (max - min + 1) || 5);
         return Math.min(5, raw);
     };
-    const getLabels = (it: any) => {
-        const count = getPoints(it);
-        if (Array.isArray(it.scale_labels) && it.scale_labels.length === count) return it.scale_labels.map((s: string) => s || "");
-        const left = it.scale_left_label || "Bajo";
-        const right = it.scale_right_label || "Alto";
-        if (count === 5) return [left, "", "Medio", "", right];
-        if (count === 4) return [left, "", "", right];
-        if (count === 3) return [left, "Medio", right];
-        return [left, right];
-    };
+    
+    function getLabels(it: any) {
+        const min = it.scale_min ?? 1;
+        const max = it.scale_max ?? 5;
+        const n = Math.min(5, Math.max(2, max - min + 1));
+        if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
+            const a = Array.from({ length: n }, (_, i) => (it.scale_labels[i] ?? "").trim());
+            return a;
+        }
+        const a = Array.from({ length: n }, () => "");
+        if (it.scale_left_label) a[0] = String(it.scale_left_label);
+        if (it.scale_right_label) a[n - 1] = String(it.scale_right_label);
+        return a;
+    }
 
     useEffect(() => {
         (async () => {
@@ -114,6 +118,22 @@ export function JournalSelfCareSessionPage() {
         clearLocalAnswers(entryId);
         navigate("/journal");
     };
+    function getScaleLabels(it: any) {
+        const min = it.scale_min ?? 1;
+        const max = it.scale_max ?? 5;
+        const count = Math.min(5, Math.max(2, max - min + 1));
+
+        // si ya hay arreglo, úsalo
+        if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
+            const a = Array.from({ length: count }, (_, i) => (it.scale_labels[i] ?? "").trim());
+            return a;
+        }
+        // fallback: solo extremos
+        const a = Array.from({ length: count }, () => "");
+        if (it.scale_left_label) a[0] = String(it.scale_left_label);
+        if (it.scale_right_label) a[count - 1] = String(it.scale_right_label);
+        return a;
+    }
 
     return (
         <section className="mx-auto max-w-6xl text-text">
@@ -134,19 +154,23 @@ export function JournalSelfCareSessionPage() {
                     <section key={it.item_id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
                         <h2 className="text-sm font-semibold">{it.prompt}</h2>
                         {!!it.helper && <p className="text-xs text-text/70">{it.helper}</p>}
-
+                        {it.kind === "options" && (
+                            <div className="mt-3 flex flex-wrap gap-2 justify-start">
+                                {/* ...tu render de ChipToggle/acciones aquí... */}
+                            </div>
+                        )}
                         {it.kind === "scale" ? (
                             <div className="mt-3">
                                 <LikertScale
-                                    name={`s-${it.item_id}`}
-                                    points={getPoints(it)}
                                     value={scales[it.item_id]}
                                     onChange={(v) => setScale(it.item_id, v)}
+                                    min={it.scale_min ?? 1}
+                                    max={it.scale_max ?? 5}
                                     labels={getLabels(it)}
                                 />
                             </div>
                         ) : (
-                            <div className="mt-3 flex flex-wrap justify-center gap-2">
+                            <div className="mt-3 flex flex-wrap justify-start gap-2">
                                 {(it.options ?? []).map((opt: any) => {
                                     const set = selected[it.item_id] ?? new Set<string>();
                                     const active = set.has(opt.key);

@@ -18,14 +18,19 @@ export function JournalEmotionSessionPage() {
   const [selected, setSelected] = useState<Record<number, Set<string>>>({});
   const [scales, setScales] = useState<Record<number, number | undefined>>({});
 
-  const getLabels = (it: any) => {
-    if (Array.isArray(it.scale_labels) && it.scale_labels.length === 5) {
-      return it.scale_labels.map((s: string) => s || "");
+  function getLabels(it: any) {
+    const min = it.scale_min ?? 1;
+    const max = it.scale_max ?? 5;
+    const n = Math.min(5, Math.max(2, max - min + 1));
+    if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
+      const a = Array.from({ length: n }, (_, i) => (it.scale_labels[i] ?? "").trim());
+      return a;
     }
-    const left = it.scale_left_label || "Bajo";
-    const right = it.scale_right_label || "Alto";
-    return [left, "", "Medio", "", right];
-  };
+    const a = Array.from({ length: n }, () => "");
+    if (it.scale_left_label) a[0] = String(it.scale_left_label);
+    if (it.scale_right_label) a[n - 1] = String(it.scale_right_label);
+    return a;
+  }
   // Guardar borrador si hay requeridos sin responder
   const totalRequired = items.filter((i) => i.required).length;
   const totalAnswered = useMemo(() => {
@@ -119,6 +124,22 @@ export function JournalEmotionSessionPage() {
     navigate("/journal");
   };
 
+  function getScaleLabels(it: any) {
+    const min = it.scale_min ?? 1;
+    const max = it.scale_max ?? 5;
+    const count = Math.min(5, Math.max(2, max - min + 1));
+
+    // si ya hay arreglo, úsalo
+    if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
+      const a = Array.from({ length: count }, (_, i) => (it.scale_labels[i] ?? "").trim());
+      return a;
+    }
+    // fallback: solo extremos
+    const a = Array.from({ length: count }, () => "");
+    if (it.scale_left_label) a[0] = String(it.scale_left_label);
+    if (it.scale_right_label) a[count - 1] = String(it.scale_right_label);
+    return a;
+  }
 
   return (
     <section className="mx-auto max-w-6xl text-text">
@@ -137,17 +158,21 @@ export function JournalEmotionSessionPage() {
       <div className="space-y-6 p-4">
         {items.map((it) => (
           <section key={it.item_id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-            <h2 className="text-sm font-semibold">{it.prompt}</h2>
-            {!!it.helper && <p className="text-xs text-text/70">{it.helper}</p>}
 
+            {!!it.helper && <p className="text-xs text-text/70">{it.helper}</p>}
+            {it.kind === "options" && (
+              <div className="mt-3 flex flex-wrap gap-2 justify-start">
+                {/* ...tu render de ChipToggle/acciones aquí... */}
+              </div>
+            )}
             {it.kind === "scale" ? (
               <div className="mt-3">
                 <LikertScale
-                  name={`s-${it.item_id}`}
                   value={scales[it.item_id]}
-                  onChange={(v: any) => setScale(it.item_id, v as number)}
+                  onChange={(v) => setScale(it.item_id, v)}
+                  min={it.scale_min ?? 1}
+                  max={it.scale_max ?? 5}
                   labels={getLabels(it)}
-                // responsive by default with your component styles
                 />
               </div>
             ) : (

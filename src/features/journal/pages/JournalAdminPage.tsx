@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   adminCloneVersion, adminPublish, adminGetForms, adminGetVersions, adminGetItems, adminUpsertItem, adminDeleteItem,
 } from "@/features/journal/api/journalApi";
@@ -9,10 +9,13 @@ import { cn } from "@/lib/utils";
 import { adminDeleteVersion, adminForceDeleteVersion, adminRenameVersion } from "@/features/journal/api/journalApi";
 import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import { useToast } from "@/components/toast/ToastProvider";
+import { ScaleLabelsEditor } from "../components/ScaleLabelsEditor";
+import { updateJournalItemScale } from "@/features/journal/api/journalApi";
+import { Input } from "@/components/ui/input";
 
 export function JournalAdminPage() {
   const confirm = useConfirm();
-  const { success, info} = useToast();
+  const { success, info } = useToast();
   const [loading, setLoading] = useState(true);
   const [forms, setForms] = useState<any[]>([]);
   const [selectedForm, setSelectedForm] = useState<any | null>(null);
@@ -23,6 +26,21 @@ export function JournalAdminPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [draftLabels, setDraftLabels] = useState<Record<number, string[]>>({});
+  const saveTimers = useRef<Record<number, number>>({}); // itemId -> timer id
+
+  const scheduleSaveScaleLabels = (it: any, next: string[]) => {
+    // normaliza a 5 posiciones como máximo
+    const trimmed = next.slice(0, 5);
+    // limpia timer previo
+    const t = saveTimers.current[it.id];
+    if (t) window.clearTimeout(t);
+    // guarda luego de 400ms sin cambios
+    saveTimers.current[it.id] = window.setTimeout(async () => {
+      const saved = await adminUpsertItem({ ...it, scale_labels: trimmed });
+      setItems((xs) => xs.map((x) => (x.id === it.id ? saved : x)));
+    }, 400);
+  };
+
   // Helpers de escala
   const scaleCount = (it: any) => Math.min(5, Math.max(2, (Number(it.scale_max ?? 5) - Number(it.scale_min ?? 1) + 1) || 5));
   const getBufferedLabels = (it: any) => {
@@ -110,7 +128,7 @@ export function JournalAdminPage() {
     const justCreated = vs.find((v: any) => v.id === vid);
     const defaultName = generateDefaultDraftName(vs);
     if (justCreated && !hasNonEmptyName(justCreated)) {
-      try { await adminRenameVersion(vid, defaultName); } catch {}
+      try { await adminRenameVersion(vid, defaultName); } catch { }
     }
     const refreshed = await adminGetVersions(selectedForm.id);
     setVersions(refreshed);
@@ -138,7 +156,7 @@ export function JournalAdminPage() {
   async function onAddItem(kind: "scale" | "options") {
     const base =
       kind === "scale"
-        ? { scale_min: 1, scale_max: 5, scale_left_label: "Bajo", scale_right_label: "Alto" }
+        ? { scale_min: 1, scale_max: 5, scale_left_label: "Muy mal", scale_right_label: "Muy bien" }
         : { options: [{ key: "ok", label: "OK", emoji: "👍" }], multi_select: true };
     const saved = await adminUpsertItem({
       version_id: selectedVersion.id,
@@ -394,109 +412,18 @@ export function JournalAdminPage() {
                 </div>
               </div>
               {/* Resto sin cambios */}
-              {it.kind === "scale" ? (
-                <div className="mt-3 space-y-4">
-                  {/* Etiquetas por punto */}
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <h4 className="text-xs font-semibold text-text/80">Etiquetas de la escala</h4>
-                      <span className="text-[11px] text-text/60">Máximo 5 puntos</span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                      {getBufferedLabels(it).map((val: string, i: number) => {
-                        const placeholders = ["Bajo", "", "Medio", "", "Alto"];
-                        const ph = placeholders[i] ?? "";
-                        return (
-                          <input
-                            key={i}
-                            value={val}
-                            placeholder={ph}
-                            onChange={(e) =>
-                              setDraftLabels((s) => {
-                                const next = [...getBufferedLabels(it)];
-                                next[i] = e.target.value;
-                                return { ...s, [it.id]: next };
-                              })
-                            }
-                            onBlur={async () => {
-                              const next = [...getBufferedLabels(it)];
-                              try {
-                                const saved = await adminUpsertItem({ ...it, scale_labels: next });
-                                setItems((xs) => xs.map((x) => (x.id === it.id ? saved : x)));
-                              } catch { }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                              if (e.key === "Escape") {
-                                setDraftLabels((s) => {
-                                  const cloned = { ...s };
-                                  delete cloned[it.id];
-                                  return cloned;
-                                });
-                              }
-                            }}
-                            className="h-9 rounded-xl border border-border bg-surface px-3 text-sm outline-none transition placeholder:text-text/40 hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        );
-                      })}
-                    </div>
-                    <p className="mt-2 text-[11px] text-text/60">
-                      Estos textos se muestran bajo cada punto de la escala. Deja en blanco los intermedios si no los necesitas.
-                    </p>
-                  </div>
-                  <details className="rounded-lg border border-border/70 bg-surface p-3 open:shadow-sm">
-                    <summary className="cursor-pointer text-xs text-text/80">Opciones avanzadas (Min/Max)</summary>
-                    <div className="mt-3 grid max-w-md grid-cols-2 gap-3">
-                      <label className="flex flex-col gap-1 text-xs">
-                        <span className="font-medium text-text/80">Min</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={4}
-                          defaultValue={it.scale_min ?? 1}
-                          className="h-9 rounded-lg border border-border bg-surface px-3 text-sm outline-none transition hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          onBlur={async (e) => {
-                            const min = Math.max(1, Math.min(4, Number(e.target.value) || 1));
-                            const max = Math.min(5, Math.max(min + 1, Number(it.scale_max ?? 5)));
-                            const saved = await adminUpsertItem({ ...it, scale_min: min, scale_max: max });
-                            setItems((xs) => xs.map((x) => (x.id === it.id ? saved : x)));
-                            setDraftLabels((s) => {
-                              const next = Array.from(
-                                { length: Math.min(5, Math.max(2, max - min + 1)) },
-                                (_, i) => s[it.id]?.[i] ?? it.scale_labels?.[i] ?? ""
-                              );
-                              return { ...s, [it.id]: next };
-                            });
-                          }}
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1 text-xs">
-                        <span className="font-medium text-text/80">Max</span>
-                        <input
-                          type="number"
-                          min={2}
-                          max={5}
-                          defaultValue={it.scale_max ?? 5}
-                          className="h-9 rounded-lg border border-border bg-surface px-3 text-sm outline-none transition hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          onBlur={async (e) => {
-                            const max = Math.max(2, Math.min(5, Number(e.target.value) || 5));
-                            const min = Math.min(Number(it.scale_min ?? 1), max - 1);
-                            const saved = await adminUpsertItem({ ...it, scale_min: min, scale_max: max });
-                            setItems((xs) => xs.map((x) => (x.id === it.id ? saved : x)));
-                            setDraftLabels((s) => {
-                              const next = Array.from(
-                                { length: Math.min(5, Math.max(2, max - min + 1)) },
-                                (_, i) => s[it.id]?.[i] ?? it.scale_labels?.[i] ?? ""
-                              );
-                              return { ...s, [it.id]: next };
-                            });
-                          }}
-                        />
-                      </label>
-                    </div>
-                  </details>
+              {it.kind === "scale" && (
+                <div className="mt-4 space-y-4">
+                  <ScaleLabelsEditor
+                    item={it}
+                    onItemUpdate={(saved) => {
+                      setItems((xs) => xs.map((x) => (x.id === saved.id ? saved : x)));
+                    }}
+                  />
                 </div>
-              ) : (
+              )}
+
+              {it.kind === "options" && (
                 <div className="mt-2 space-y-2 text-xs">
                   <OptionEditor
                     value={it.options ?? []}
