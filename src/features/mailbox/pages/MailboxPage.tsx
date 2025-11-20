@@ -18,10 +18,22 @@ export default function MailboxPage() {
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [rows, setRows] = useState<SuggestionRow[]>([]);
   const roleId = user?.role_id ?? 3;
+
+  // Lista fija de categorías disponibles
+  const CATEGORY_OPTIONS = [
+    'Infraestructura e instalaciones',
+    'Academico',
+    'convivencia y seguridad',
+    'Servicios estudiantiles',
+    'Tecnologias y recursos',
+    'Deportes y actividades',
+    'Administrativo y tramites'
+  ];
+
+  // Se eliminó el apartado de imágenes/adjuntos
 
   async function refresh() {
     try {
@@ -60,17 +72,15 @@ export default function MailboxPage() {
           setSubmitting(true);
           try {
             await createSuggestion({
-              author_profile_id: user.id,
+              // author_profile_id omitido: se resuelve internamente a profiles.id
               role_id: roleId as any,
               subject: subject.trim(),
               message: message.trim(),
               category: category.trim() || null,
-              files,
             });
             setSubject('');
             setCategory('');
             setMessage('');
-            setFiles([]);
             await refresh();
           } catch (err: any) {
             alert(err?.message ?? 'No se pudo enviar');
@@ -86,7 +96,16 @@ export default function MailboxPage() {
 
         <div className="space-y-1">
           <label className="text-sm">Categoría (opcional)</label>
-          <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Sugerencia, Técnica, Otro…" />
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full rounded-md border border-border bg-transparent p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">-- Selecciona categoría --</option>
+            {CATEGORY_OPTIONS.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-1">
@@ -100,17 +119,7 @@ export default function MailboxPage() {
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm">Adjuntos (opcional)</label>
-          <input
-            type="file"
-            multiple
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-          />
-          {files.length > 0 && (
-            <p className="text-xs text-gray-600">{files.length} archivo(s) seleccionados</p>
-          )}
-        </div>
+        {/* Apartado de adjuntos eliminado para simplificar y evitar errores */}
 
         <Button type="submit" disabled={submitting || !canSend}>
           {submitting ? 'Enviando…' : 'Enviar sugerencia'}
@@ -132,13 +141,7 @@ export default function MailboxPage() {
                 </div>
                 {r.category && <p className="text-xs text-gray-600 mt-1">Categoría: {r.category}</p>}
                 <p className="mt-2 text-sm whitespace-pre-wrap">{r.message}</p>
-                {Array.isArray(r.attachments) && r.attachments.length > 0 && (
-                  <ul className="mt-2 list-disc pl-4 text-sm">
-                    {r.attachments.map((a, idx) => (
-                      <li key={idx}>{a.name}</li>
-                    ))}
-                  </ul>
-                )}
+                {/* Ya no mostramos adjuntos en el listado */}
               </li>
             ))}
           </ul>

@@ -9,86 +9,63 @@ export type MailboxAttachment = {
 
 export type CreateSuggestionInput = {
   id?: string; // if not provided, a UUID will be generated client-side
-  author_profile_id: string;
-  role_id: 2 | 3 | 1; // admin optional; RLS may restrict
+  author_profile_id?: string; // si no se provee, se buscará vía auth.uid() -> profiles.id
+  role_id: 2 | 3 | 1; // admin opcional; RLS puede restringir
   subject: string;
   message: string;
   category?: string | null;
-  files?: File[]; // optional attachments to upload
 };
 
-export async function getMyProfileId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .maybeSingle();
-  return data?.id ?? null;
+// Preferir RPC para evitar RLS sobre profiles y usar la función SECURITY DEFINER
+export async function getCurrentProfileIdRPC(): Promise<string | null> {
+  const { data, error } = await supabase.rpc('current_profile_id');
+  if (error) {
+    console.warn('RPC current_profile_id falló:', error.message);
+    return null;
+  }
+  return (data as any) ?? null;
 }
 
-function sanitizeFilename(name: string) {
-  return name
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+// No file uploads in the simplified mailbox flow
 
 export async function createSuggestion(input: CreateSuggestionInput) {
+  // Resolver profile id si no se proporciona. Intentamos vía RPC.
+  // Si no obtenemos valor, omitimos la columna para permitir DEFAULT en BD.
+  let authorProfileId = input.author_profile_id ?? null;
+  if (!authorProfileId) {
+    authorProfileId = await getCurrentProfileIdRPC();
+  }
   const suggestionId = input.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
 
-  // 1) Insert row first (with empty attachments), client-provided id for stable storage path
+  // Se eliminó la carga de archivos; no subimos adjuntos
+
+  // 2) Insert row with full attachments list (or null)
+  const payload: any = {
+    id: suggestionId,
+    role_id: input.role_id,
+    subject: input.subject,
+    message: input.message,
+    category: input.category ?? null,
+    attachments: null,
+  };
+  if (authorProfileId) payload.author_profile_id = authorProfileId;
+
   const { error: insertError } = await supabase
     .from('mailbox')
-    .insert({
-      id: suggestionId,
-      author_profile_id: input.author_profile_id,
-      role_id: input.role_id,
-      subject: input.subject,
-      message: input.message,
-      category: input.category ?? null,
-      attachments: null,
-    });
-  if (insertError) throw insertError;
-
-  const files = input.files ?? [];
-  let uploaded: MailboxAttachment[] = [];
-
-  if (files.length > 0) {
-    const bucket = supabase.storage.from('mailbox');
-    for (const file of files) {
-      const uniqueName = `${Date.now()}_${sanitizeFilename(file.name)}`;
-      const path = `${suggestionId}/${uniqueName}`;
-      const { error: upErr } = await bucket.upload(path, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || undefined,
-      });
-      if (upErr) throw upErr;
-      uploaded.push({ name: file.name, path, type: file.type || null, size: file.size ?? null });
-    }
-
-    // 2) Update attachments metadata
-    const { error: updErr } = await supabase
-      .from('mailbox')
-      .update({ attachments: uploaded })
-      .eq('id', suggestionId);
-    if (updErr) throw updErr;
+    .insert(payload);
+  if (insertError) {
+    console.error('Fallo al insertar en mailbox:', insertError);
+    throw insertError;
   }
 
-  return { id: suggestionId, attachments: uploaded };
+  return { id: suggestionId, attachments: [] };
 }
 
 export async function listMySuggestions() {
-  const profileId = await getMyProfileId();
-  if (!profileId) return [];
+  // Confiar en RLS para devolver solo filas del autor actual
   const { data, error } = await supabase
     .from('mailbox')
     .select('*')
-    .eq('author_profile_id', profileId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
@@ -98,7 +75,7 @@ export async function adminListSuggestions() {
   // 1) Obtener sugerencias
   const { data: rows, error } = await supabase
     .from('mailbox')
-    .select('id, subject, message, category, role_id, created_at, attachments, author_profile_id')
+    .select('id, subject, message, category, role_id, created_at, author_profile_id')
     .order('created_at', { ascending: false });
   if (error) throw error;
 
@@ -126,3 +103,31 @@ export async function adminListSuggestions() {
     sender_full_name: nameById.get(r.author_profile_id) ?? 'Sin nombre',
   }));
 }
+
+// Delete a suggestion (admin). Removes storage attachments first.
+export async function deleteSuggestion(id: string) {
+  // Fetch attachments for the row (RLS allows admin)
+  const { data, error } = await supabase
+    .from('mailbox')
+    .select('attachments')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+
+  const attachments: MailboxAttachment[] = (data?.attachments as any[]) || [];
+  if (attachments.length) {
+    const bucket = supabase.storage.from('mailbox');
+    const paths = attachments.map(a => a.path).filter(Boolean);
+    if (paths.length) {
+      const { error: remErr } = await bucket.remove(paths);
+      if (remErr) console.warn('No se pudieron eliminar algunos archivos del storage:', remErr.message);
+    }
+  }
+
+  const { error: delErr } = await supabase.from('mailbox').delete().eq('id', id);
+  if (delErr) throw delErr;
+  return { id };
+}
+
+// Crear URL firmada para un adjunto (solo admin debe poder leer otros paths vía RLS + storage policies)
+// getMailboxAttachmentUrl eliminado al quitar adjuntos del buzón
