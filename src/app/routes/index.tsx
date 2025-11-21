@@ -20,6 +20,8 @@ import AdminQuestionsDashboard from "@/features/questions/pages/AdminQuestionsDa
 import { JournalAdminPage } from "@/features/journal/pages/JournalAdminPage";
 import JournalEmotionPage from "@/features/journal/pages/JournalEmotionPage";
 import JournalSelfCarePage from "@/features/journal/pages/JournalSelfCarePage";
+import MailboxPage from "@/features/mailbox/pages/MailboxPage";
+import AdminMailboxPage from "@/features/mailbox/pages/AdminMailboxPage";
 
 const router = createBrowserRouter([
   
@@ -48,6 +50,7 @@ const router = createBrowserRouter([
           { path: "/journal/session/self-care", element: <JournalSelfCareSessionPage /> },
           { path: "/journal/emotions", element: <JournalEmotionPage /> },
           { path: "/journal/self-care", element: <JournalSelfCarePage /> },
+          { path: "/forum", element: <MailboxPage /> },
 
           // Solo administradores
           {
@@ -57,6 +60,7 @@ const router = createBrowserRouter([
               { path: "/admin/assignments/manage", element: <AdminAssignmentsPage /> },
               { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
               { path: "/admin/journal", element: <JournalAdminPage /> },
+              { path: "/admin/mailbox", element: <AdminMailboxPage /> },
             ],
           },
         ],

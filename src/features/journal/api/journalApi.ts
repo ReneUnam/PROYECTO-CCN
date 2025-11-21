@@ -155,10 +155,10 @@ export async function completeEntry(entryId: string) {
 }
 
 export async function getMyStreakAll(type?: string) {
-    const { data, error } = await supabase
+    const q = supabase
         .from("journal_streaks")
-        .select("type,current_streak,best_streak,last_entry_date")
-        .eq("type", type);
+        .select("type,current_streak,best_streak,last_entry_date");
+    const { data, error } = type ? await q.eq("type", type) : await q;
     if (error) throw error;
     return data ?? [];
 }

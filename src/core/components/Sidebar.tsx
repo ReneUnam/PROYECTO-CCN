@@ -44,7 +44,7 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Perfil", path: "/profile", icon: User },
     { label: "Diario", path: "/journal", icon: NotebookPen },
     { label: "Preguntas", path: "/questions", icon: HelpCircle },
-    { label: "Buzón", path: "/forum", icon: Inbox },
+  { label: "Buzón", path: "/forum", icon: Inbox },
     { label: "Asistente virtual", path: "/chatbot", icon: Bot },
     { label: "Recursos", path: "/resources", icon: BookOpen, allowedRoleIds: [2] },
     { label: "Bienestar", path: "/wellness", icon: Brain },
@@ -126,6 +126,22 @@ export function Sidebar({ open }: SidebarProps) {
                 </button>
                   {adminMenuOpen && (
                   <ul className="mt-1 space-y-1 pl-6 text-sm">
+                      {/* Buzón (admin) */}
+                      <li>
+                        <NavLink
+                          to="/admin/mailbox"
+                          className={({ isActive }) =>
+                            [
+                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                              "hover:bg-primary/10",
+                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ")
+                          }
+                        >
+                          <Inbox className="h-4 w-4" />
+                          <span>Buzón</span>
+                        </NavLink>
+                      </li>
                       <li>
                         <NavLink
                           to="/admin/questions/dashboard"
