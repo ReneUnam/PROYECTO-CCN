@@ -157,14 +157,45 @@ app.get('/chat/sessions', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) return res.status(400).json({ error: 'Missing x-user-id header' });
   try {
-    const { data, error } = await supabaseAdmin
+    const { data: sessions, error } = await supabaseAdmin
       .from('chat_sessions')
       .select('id, created_at, summary, last_summary_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    console.log(`[chat-sessions] user ${userId} sesiones: ${data?.length || 0}`);
-    res.json({ sessions: data || [] });
+    const enriched = [];
+    for (const s of sessions || []) {
+      // Obtener mensajes para emoción dominante y primer mensaje
+      const { data: msgs, error: msgErr } = await supabaseAdmin
+        .from('chat_messages')
+        .select('emotion, content, role')
+        .eq('session_id', s.id)
+        .order('created_at', { ascending: true });
+      if (msgErr) {
+        console.warn('[chat-sessions] error contando mensajes', msgErr.message);
+        enriched.push({ ...s, message_count: 0, dominant_emotion: null, first_message: null });
+        continue;
+      }
+      const counts = {};
+      let firstMsg = null;
+      for (const m of msgs || []) {
+        const label = (m.emotion || 'neutral').toLowerCase();
+        counts[label] = (counts[label] || 0) + 1;
+        if (!firstMsg && m.role === 'user' && m.content) firstMsg = m.content;
+      }
+      let dominant = null;
+      let max = 0;
+      for (const [emo, c] of Object.entries(counts)) {
+        // Preferir no-neutral si hay empate
+        if (c > max || (c === max && emo !== 'neutral')) {
+          dominant = emo;
+          max = c;
+        }
+      }
+      enriched.push({ ...s, message_count: msgs?.length || 0, dominant_emotion: dominant, first_message: firstMsg });
+    }
+    console.log(`[chat-sessions] user ${userId} sesiones: ${enriched.length}`);
+    res.json({ sessions: enriched });
   } catch (e) {
     console.error('[chat-sessions] error', e.message);
     res.status(500).json({ error: e.message || 'Internal error' });

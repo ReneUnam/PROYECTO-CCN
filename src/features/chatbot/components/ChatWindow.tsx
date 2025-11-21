@@ -190,7 +190,10 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   function startNewSession() {
     localStorage.removeItem('chat_session_id');
     setSessionId(null);
-    setMessages([{ role: 'system', content: initialSystemPrompt }]);
+    setMessages([
+      { role: 'system', content: initialSystemPrompt },
+      { role: 'assistant', content: '¡Hola! ¡Bienvenido a nuestro servicio de apoyo académico! Me alegra que hayas decidido conectarte con nosotros. ¿En qué puedo ayudarte hoy? ¿Tienes algún problema o inquietud que te gustaría discutir? Estoy aquí para escucharte y apoyarte en lo que necesites. Recuerda que tu privacidad es importante para mí, así que no tengas temor a compartir tus pensamientos o sentimientos conmigo. ¡Estoy aquí para ti!' }
+    ]);
   }
 
   // Seleccionar sesión previa
@@ -201,7 +204,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full font-sans gap-4">
       {user?.id && (
         <SessionSidebar
           userId={user.id}
@@ -210,11 +213,11 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           onNew={startNewSession}
         />
       )}
-      <div className="flex flex-col flex-1 h-full max-h-[80vh] border rounded-md bg-white">
+      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-white shadow-lg">
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto p-4 space-y-4 text-sm relative"
+          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-gradient-to-b from-gray-50 to-white"
           onWheel={registerUserInteraction}
           onMouseDown={registerUserInteraction}
           onTouchStart={registerUserInteraction}
@@ -223,16 +226,10 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
             <button
               type="button"
               onClick={scrollToBottom}
-              className="absolute right-4 bottom-4 z-10 px-3 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-md flex items-center gap-1"
+              className="absolute right-6 bottom-6 z-10 px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg animate-popIn flex items-center gap-1"
               aria-label="Ir al final"
             >⬇ Ir al final</button>
           )}
-          {/* Visualización clara de resumen */}
-          {messages.find(m => m.role === 'system' && m.content.startsWith('Resumen previo:')) ? (
-            <div className="p-2 mb-2 rounded bg-yellow-50 border border-yellow-200 text-xs text-gray-700">
-              <b>Resumen:</b> {messages.find(m => m.role === 'system' && m.content.startsWith('Resumen previo:'))?.content.replace('Resumen previo:', '').trim()}
-            </div>
-          ) : null}
           {messages.filter(m => m.role !== 'system').map((m, i) => {
             const isUser = m.role === 'user';
             const badgeColor = emotionColor(m.emotion);
@@ -240,17 +237,22 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
             return (
               <div
                 key={i}
-                className={`group mb-3 p-3 rounded-md whitespace-pre-wrap transition shadow-sm hover:shadow ${isUser ? 'bg-indigo-50 self-end' : 'bg-gray-50'}`}
+                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 self-end ml-auto' : 'bg-white border border-gray-200'} animate-fadeIn`}
+                style={{ fontFamily: 'Inter, sans-serif' }}
               >
                 <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between">
-                  <span>{isUser ? (user?.role_id === 2 ? 'Docente' : 'Tú') : 'Asistente'}</span>
+                  <span className={isUser ? 'text-indigo-700' : 'text-blue-700 flex items-center gap-1'}>
+                    {isUser
+                      ? (user?.role_id === 2 ? 'Docente' : 'Tú')
+                      : <><img src="/blue-avatar.jpg" alt="Blue" className="inline-block w-7 h-7 rounded-full mr-2 align-middle animate-popIn shadow-lg" style={{boxShadow: '0 0 12px 2px #60a5fa'}} />Blue</>}
+                  </span>
                   {m.created_at && (
                     <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
                   )}
                 </div>
-                <div className="text-[13px] md:text-sm leading-relaxed">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
+                <div className="text-[15px] md:text-base leading-relaxed text-gray-900">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
                 {m.emotion && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-[10px]" aria-label={`Emoción detectada: ${m.emotion}`}>
+                  <div className="mt-2 inline-flex items-center gap-1 text-[11px]" aria-label={`Emoción detectada: ${m.emotion}`}>
                     <span className="uppercase text-gray-500">Emoción:</span>
                     <span
                       title="Clasificación automática (puede contener errores)"
@@ -258,7 +260,8 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
                       style={{
                         backgroundColor: badgeColor.bg,
                         color: badgeColor.fg,
-                        borderColor: badgeColor.border
+                        borderColor: badgeColor.border,
+                        fontWeight: 500
                       }}
                     >{icon} {m.emotion}</span>
                   </div>
@@ -268,15 +271,16 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           })}
           <div ref={endRef} />
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-2 border-t flex gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-gray-50">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 rounded border px-2 py-1 text-sm"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white shadow-sm"
             disabled={streaming}
+            style={{ fontFamily: 'Inter, sans-serif' }}
           />
-          <button className="px-3 py-1 rounded bg-indigo-600 text-white text-sm disabled:opacity-50" disabled={streaming}>Enviar</button>
+          <button className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-base font-semibold shadow-md hover:bg-indigo-500 transition disabled:opacity-50" disabled={streaming}>Enviar</button>
         </form>
       </div>
     </div>
