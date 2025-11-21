@@ -443,9 +443,55 @@ export async function getEntryAnswers(entry_id: string) {
           ? JSON.parse(raw.scale_labels)
           : [];
     } catch { labels = []; }
-    return { ...raw, scale_labels: labels };
+    let options: any[] = [];
+    try {
+      options = Array.isArray(raw.options)
+        ? raw.options
+        : typeof raw.options === "string"
+          ? JSON.parse(raw.options)
+          : [];
+    } catch { options = []; }
+    return { ...raw, scale_labels: labels, options };
   };
   const map = new Map(items?.map((i: any) => [i.id, nrm(i)]) ?? []);
   return (data ?? []).map((a) => ({ ...a, item: map.get(a.item_id) }));
 }
+
+export async function adminListJournalEntries(params: {
+  type?: JournalType | "all";
+  status?: "draft" | "completed" | "all";
+  from?: string; to?: string; search?: string; limit?: number; offset?: number;
+}) {
+  const { type="all", status="all", from, to, search, limit=100, offset=0 } = params;
+  const { data: rpc, error } = await supabase.rpc("admin_list_journal_entries_v2", {
+    p_type: type, p_status: status, p_from: from || null, p_to: to || null,
+    p_search: search?.trim() || null, p_limit: limit, p_offset: offset,
+  });
+  if (error) { console.error("adminListJournalEntries RPC error:", error); return { rows: [] }; }
+  const rows = (rpc || []).map((e: any) => ({
+    id: e.id, profile_id: e.profile_id, type: e.type, status: e.status,
+    entry_date: e.entry_date, completed_at: e.completed_at, created_at: e.created_at, version_id: e.version_id,
+    profile: {
+      id: e.profile_id,
+      name: e.profile_name || "—",
+      identifier: e.profile_identifier || "—",
+    },
+  }));
+  return { rows };
+}
+
+// Admin: obtener respuestas + metadatos (incluye perfil)
+export async function adminGetEntryWithAnswers(entryId: string) {
+  // 1) RPC (admin)
+  const { data: rpc, error: rpcErr } = await supabase.rpc("admin_get_entry_with_answers", {
+    p_entry_id: entryId,
+  });
+  if (rpcErr) {
+    console.error("adminGetEntryWithAnswers RPC error:", rpcErr);
+    throw rpcErr;
+  }
+  // rpc.profile.identifier ya no trae email
+  return rpc;
+}
+
 

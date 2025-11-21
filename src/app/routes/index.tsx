@@ -9,7 +9,6 @@ import { Layout } from "@/core/components/Layout";
 import { RequireAuth, RequireAdmin } from "./route-guards";
 import { AssignmentSessionPage } from "@/features/questions/pages/AssignmentSessionPage";
 import { JournalHubPage } from "@/features/journal/pages/JournalHubPage";
-import { JournalTypePage } from "@/features/journal/pages/JournalTypePage";
 import { JournalEmotionSessionPage } from "@/features/journal/pages/sessions/JournalEmotionSessionPage";
 import { JournalSelfCareSessionPage } from "@/features/journal/pages/sessions/JournalSelfCareSessionPage";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
@@ -22,6 +21,7 @@ import JournalEmotionPage from "@/features/journal/pages/JournalEmotionPage";
 import JournalSelfCarePage from "@/features/journal/pages/JournalSelfCarePage";
 import MailboxPage from "@/features/mailbox/pages/MailboxPage";
 import AdminMailboxPage from "@/features/mailbox/pages/AdminMailboxPage";
+import { AdminJournalMonitorPage } from "@/features/journal/AdminJournalMonitorPage";
 
 const router = createBrowserRouter([
   
@@ -61,6 +61,8 @@ const router = createBrowserRouter([
               { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
               { path: "/admin/journal", element: <JournalAdminPage /> },
               { path: "/admin/mailbox", element: <AdminMailboxPage /> },
+              { path: "/admin/journal/monitor", element: <AdminJournalMonitorPage /> },
+            
             ],
           },
         ],

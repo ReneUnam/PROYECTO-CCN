@@ -18,7 +18,6 @@ import {
   ChevronDown,
   ShieldCheck,
   ListChecks,
-  ClipboardList,
 } from "lucide-react";
 import { supabase } from "../api/supabaseClient";
 
@@ -44,7 +43,7 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Perfil", path: "/profile", icon: User },
     { label: "Diario", path: "/journal", icon: NotebookPen },
     { label: "Preguntas", path: "/questions", icon: HelpCircle },
-  { label: "Buzón", path: "/forum", icon: Inbox },
+    { label: "Buzón", path: "/forum", icon: Inbox },
     { label: "Asistente virtual", path: "/chatbot", icon: Bot },
     { label: "Recursos", path: "/resources", icon: BookOpen, allowedRoleIds: [2] },
     { label: "Bienestar", path: "/wellness", icon: Brain },
@@ -124,58 +123,12 @@ export function Sidebar({ open }: SidebarProps) {
                     className={`ml-auto h-4 w-4 transition-transform ${adminMenuOpen ? "rotate-180" : ""}`}
                   />
                 </button>
-                  {adminMenuOpen && (
+                {adminMenuOpen && (
                   <ul className="mt-1 space-y-1 pl-6 text-sm">
-                      {/* Buzón (admin) */}
-                      <li>
-                        <NavLink
-                          to="/admin/mailbox"
-                          className={({ isActive }) =>
-                            [
-                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                              "hover:bg-primary/10",
-                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                            ].join(" ")
-                          }
-                        >
-                          <Inbox className="h-4 w-4" />
-                          <span>Buzón</span>
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink
-                          to="/admin/questions/dashboard"
-                          className={({ isActive }) =>
-                            [
-                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                              "hover:bg-primary/10",
-                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                            ].join(" ")
-                          }
-                        >
-                          <BarChart3 className="h-4 w-4" />
-                          <span>Resultados de preguntas</span>
-                        </NavLink>
-                      </li>
-                      {/* Sesiones de preguntas (envuelto en <li>) */}
-                      <li>
-                        <NavLink
-                          to="/admin/assignments/manage"
-                          className={({ isActive }) =>
-                            [
-                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                              "hover:bg-primary/10",
-                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                            ].join(" ")
-                          }
-                        >
-                          <ListChecks className="h-4 w-4" />
-                          <span>Sesiones de preguntas</span>
-                        </NavLink>
-                      </li>
+                    {/* Buzón (admin) */}
                     <li>
                       <NavLink
-                        to="/admin/questions/manage"
+                        to="/admin/mailbox"
                         className={({ isActive }) =>
                           [
                             "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
@@ -184,14 +137,46 @@ export function Sidebar({ open }: SidebarProps) {
                           ].join(" ")
                         }
                       >
-                        <ClipboardList className="h-4 w-4" />
-                        <span>Gestión general</span>
+                        <Inbox className="h-4 w-4" />
+                        <span>Buzón</span>
+                      </NavLink>
+                    </li>
+                    {/* Sesiones de preguntas (envuelto en <li>) */}
+                    <li>
+                      <NavLink
+                        to="/admin/assignments/manage"
+                        className={({ isActive }) =>
+                          [
+                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                            "hover:bg-primary/10",
+                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                          ].join(" ")
+                        }
+                      >
+                        <ListChecks className="h-4 w-4" />
+                        <span>Sesiones de preguntas</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink
+                        to="/admin/questions/dashboard"
+                        className={({ isActive }) =>
+                          [
+                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                            "hover:bg-primary/10",
+                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                          ].join(" ")
+                        }
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        <span>Resultados de preguntas</span>
                       </NavLink>
                     </li>
                     {/* Nuevo: Administración del Diario */}
                     <li>
                       <NavLink
                         to="/admin/journal"
+                        end                     // <- evita que se active en /admin/journal/monitor
                         className={({ isActive }) =>
                           [
                             "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
@@ -202,6 +187,21 @@ export function Sidebar({ open }: SidebarProps) {
                       >
                         <NotebookPen className="h-4 w-4" />
                         <span>Gestión del diario</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink
+                        to="/admin/journal/monitor"
+                        className={({ isActive }) =>
+                          [
+                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                            "hover:bg-primary/10",
+                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                          ].join(" ")
+                        }
+                      >
+                        <NotebookPen className="h-4 w-4" />
+                        <span>Monitor del diario</span>
                       </NavLink>
                     </li>
                   </ul>
