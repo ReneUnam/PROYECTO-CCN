@@ -1,0 +1,59 @@
+// Streaming contra Ollama local
+// Requiere tener el daemon Ollama corriendo y modelo descargado
+const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'llama3:8b';
+
+function buildPrompt(messages) {
+  // Convierte historial en formato simple
+  return messages.map(m => {
+    if (m.role === 'system') return `Instrucciones: ${m.content}`;
+    if (m.role === 'user') return `Usuario: ${m.content}`;
+    return `Asistente: ${m.content}`;
+  }).join('\n') + '\nAsistente:';
+}
+
+export async function streamLLM(messages, onToken) {
+  const prompt = buildPrompt(messages);
+  const body = {
+    model: DEFAULT_MODEL,
+    prompt,
+    stream: true,
+    options: {
+      temperature: 0.7,
+      num_ctx: 2048,
+      // Aumentamos límite de predicción para evitar respuestas cortas
+      num_predict: 256,
+      top_p: 0.95
+    }
+  };
+
+  const res = await fetch('http://localhost:11434/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok || !res.body) throw new Error(`Ollama fallo: ${res.status}`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let full = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    for (const line of chunk.split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      try {
+        const obj = JSON.parse(line);
+        if (obj.response) {
+          // Log de depuración para ver tokens reales del modelo
+          console.log('[llm-token]', JSON.stringify(obj.response));
+          onToken(obj.response);
+          full += obj.response;
+        }
+      } catch (_) {
+        /* ignorar */
+      }
+    }
+  }
+  return full.trim();
+}

@@ -1,5 +1,6 @@
 import { ThemeToggle } from "./ThemeToggle";
 import { Menu } from "lucide-react";
+import { Link } from "react-router-dom";
 
 
 type Props = { onToggleSidebar?: () => void };
@@ -23,6 +24,9 @@ export function Navbar({ onToggleSidebar }: Props) {
           style={{ ['--stroke' as any]: '1px' }}
         />
         <h1 className="text-xl font-semibold text-tertiary">CCN BlueWeb</h1>
+        <nav className="flex items-center gap-3 text-sm">
+          <Link to="/chatbot" className="px-2 py-1 rounded hover:bg-brand-blue/10">Chatbot</Link>
+        </nav>
       </div>
       <ThemeToggle />
     </header>

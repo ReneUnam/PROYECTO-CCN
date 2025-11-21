@@ -1,0 +1,284 @@
+import { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { sendChat, listSessionMessagesServer } from '../api/chatApi';
+import type { ChatMessage } from '../api/chatApi';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+
+interface ChatWindowProps {
+  initialSystemPrompt?: string;
+}
+
+import SessionSidebar from './SessionSidebar';
+
+export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente académico empático en español. Mantén tono calmado y validación emocional.' }: ChatWindowProps) {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'system', content: initialSystemPrompt }
+  ]);
+  const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [scrollDistance, setScrollDistance] = useState(0); // distancia al fondo
+  const SCROLL_THRESHOLD = 56; // px para considerar "cerca del final"
+  const userInteractedRef = useRef(false); // registra interacción mientras se hace streaming
+
+  // Auto-scroll sólo si el usuario estaba ya al fondo antes de este render
+  useLayoutEffect(() => {
+    if (!scrollContainerRef.current) return;
+    if (!autoScroll) return; // desactivado manualmente
+    const el = scrollContainerRef.current;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distance < SCROLL_THRESHOLD) {
+      // usar scroll rápido mientras llega cada token para no pelear con gestos del usuario
+      endRef.current?.scrollIntoView({ behavior: streaming ? 'auto' : 'smooth' });
+    }
+  }, [messages, autoScroll, streaming]);
+
+  // Evento de scroll para detectar si el usuario se aleja del final
+  function handleScroll() {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setScrollDistance(distanceFromBottom);
+    // Si el usuario se aleja más que el umbral, desactivar de inmediato
+    if (distanceFromBottom >= SCROLL_THRESHOLD) {
+      if (autoScroll) setAutoScroll(false);
+      userInteractedRef.current = true;
+    } else {
+      // Cerca del final: solo reactivar si no hubo interacción manual durante streaming
+      if (!userInteractedRef.current && !autoScroll) setAutoScroll(true);
+    }
+  }
+
+  // Marcar interacción al usar rueda / mousedown
+  function registerUserInteraction() {
+    userInteractedRef.current = true;
+    if (autoScroll) setAutoScroll(false);
+  }
+
+  function scrollToBottom() {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setAutoScroll(true);
+  }
+
+  function emotionColor(emotion?: string | null) {
+    const base = { bg: '#f3f4f6', fg: '#374151', border: '#e5e7eb' };
+    if (!emotion) return base;
+    const e = emotion.toLowerCase();
+    const map: Record<string, { bg: string; fg: string; border: string }> = {
+      'alegría': { bg: '#fef3c7', fg: '#92400e', border: '#fcd34d' },
+      'tristeza': { bg: '#e0f2fe', fg: '#0c4a6e', border: '#38bdf8' },
+      'ira': { bg: '#fee2e2', fg: '#991b1b', border: '#f87171' },
+      'miedo': { bg: '#ede9fe', fg: '#5b21b6', border: '#c4b5fd' },
+      'amor': { bg: '#ffe4e6', fg: '#9f1239', border: '#fb7185' },
+      'sorpresa': { bg: '#f3e8ff', fg: '#6b21a8', border: '#d8b4fe' },
+      'neutral': { bg: '#f3f4f6', fg: '#374151', border: '#d1d5db' }
+    };
+    return map[e] || base;
+  }
+
+  function emotionIcon(emotion?: string | null) {
+    if (!emotion) return '💬';
+    const e = emotion.toLowerCase();
+    const map: Record<string, string> = {
+      'alegría': '🙂',
+      'tristeza': '😢',
+      'ira': '😠',
+      'miedo': '😰',
+      'amor': '❤️',
+      'sorpresa': '😮',
+      'neutral': '😐'
+    };
+    return map[e] || '💬';
+  }
+
+  function timeAgo(iso?: string) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const diffMs = Date.now() - date.getTime();
+    const sec = Math.floor(diffMs / 1000);
+    if (sec < 5) return 'justo ahora';
+    if (sec < 60) return `hace ${sec}s`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `hace ${min}m`;
+    const hrs = Math.floor(min / 60);
+    if (hrs < 24) return `hace ${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    return `hace ${days}d`;
+  }
+
+  // Restaurar sessionId solamente (sin cargar aún) al montar
+  useEffect(() => {
+    const stored = localStorage.getItem('chat_session_id');
+    if (stored) {
+      setSessionId(stored);
+      console.log('[chat] sessionId restaurado', stored);
+    }
+  }, []);
+
+  // Cargar historial cuando tengamos sessionId y usuario autenticado (RLS depende de auth.uid())
+  useEffect(() => {
+    if (!sessionId || !user?.id) return;
+    // Evitar recargas múltiples: si ya hay más de 1 mensaje (system + alguno) no recargar
+    if (messages.length > 1) return;
+    let cancelled = false;
+
+    async function loadHistory(attempt = 0) {
+      try {
+        const result = await listSessionMessagesServer(sessionId!, user!.id);
+        if (cancelled) return;
+        const dbMsgs = result.messages || [];
+        if (!dbMsgs.length && attempt < 2) {
+          // Puede que el token de auth aún no haya aplicado RLS; reintentar
+            setTimeout(() => loadHistory(attempt + 1), 800);
+            return;
+        }
+        const mapped: ChatMessage[] = dbMsgs.map((m: any) => ({ role: m.role as any, content: m.content, emotion: m.emotion || null, created_at: m.created_at }));
+        setMessages(prev => {
+          const baseSystem = prev.find(m => m.role === 'system');
+          return baseSystem ? [baseSystem, ...mapped] : mapped;
+        });
+        console.log(`[chat] historial cargado servidor (${mapped.length} mensajes)`);
+      } catch (e: any) {
+        console.warn('[chat] error cargando historial', e.message);
+      }
+    }
+    loadHistory();
+    return () => { cancelled = true; };
+  }, [sessionId, user?.id, messages.length]);
+
+  async function handleSend() {
+    if (!input.trim() || streaming) return;
+    const nowIso = new Date().toISOString();
+    const newUserMsg: ChatMessage = { role: 'user', content: input.trim(), created_at: nowIso };
+    const nextHistory = [...messages, newUserMsg];
+    setMessages(nextHistory);
+    setInput('');
+    setStreaming(true);
+    // Insertamos placeholder del asistente y guardamos índice para actualizaciones directas
+    const assistantIndex = nextHistory.length; // posición donde irá el asistente
+    setMessages(curr => [...curr, { role: 'assistant', content: '', created_at: nowIso }]);
+    let assistantContent = '';
+    try {
+      if (!user?.id) {
+        setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: 'No hay user.id disponible.' } : m));
+        setStreaming(false);
+        return;
+      }
+      const result = await sendChat({ sessionId, messages: nextHistory, userId: user.id }, (token) => {
+        assistantContent += token;
+        // Actualizamos sólo el índice del asistente
+        setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: assistantContent } : m));
+      });
+      const newSessionId = result.sessionId || sessionId;
+      setSessionId(newSessionId);
+      if (newSessionId && newSessionId !== localStorage.getItem('chat_session_id')) {
+        localStorage.setItem('chat_session_id', newSessionId);
+        console.log('[chat] sessionId creado y guardado', newSessionId);
+      }
+      setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: assistantContent, emotion: result.emotion || null } : m));
+    } catch (e: any) {
+      setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: e.message || 'Error procesando respuesta.' } : m));
+    } finally {
+      setStreaming(false);
+    }
+  }
+
+  // Nueva conversación: borra sessionId y reinicia mensajes
+  function startNewSession() {
+    localStorage.removeItem('chat_session_id');
+    setSessionId(null);
+    setMessages([{ role: 'system', content: initialSystemPrompt }]);
+  }
+
+  // Seleccionar sesión previa
+  function selectSession(id: string) {
+    localStorage.setItem('chat_session_id', id);
+    setSessionId(id);
+    setMessages([{ role: 'system', content: initialSystemPrompt }]);
+  }
+
+  return (
+    <div className="flex h-full">
+      {user?.id && (
+        <SessionSidebar
+          userId={user.id}
+          currentSessionId={sessionId}
+          onSelect={selectSession}
+          onNew={startNewSession}
+        />
+      )}
+      <div className="flex flex-col flex-1 h-full max-h-[80vh] border rounded-md bg-white">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-auto p-4 space-y-4 text-sm relative"
+          onWheel={registerUserInteraction}
+          onMouseDown={registerUserInteraction}
+          onTouchStart={registerUserInteraction}
+        >
+          {!autoScroll && scrollDistance > 120 && (
+            <button
+              type="button"
+              onClick={scrollToBottom}
+              className="absolute right-4 bottom-4 z-10 px-3 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-md flex items-center gap-1"
+              aria-label="Ir al final"
+            >⬇ Ir al final</button>
+          )}
+          {/* Visualización clara de resumen */}
+          {messages.find(m => m.role === 'system' && m.content.startsWith('Resumen previo:')) ? (
+            <div className="p-2 mb-2 rounded bg-yellow-50 border border-yellow-200 text-xs text-gray-700">
+              <b>Resumen:</b> {messages.find(m => m.role === 'system' && m.content.startsWith('Resumen previo:'))?.content.replace('Resumen previo:', '').trim()}
+            </div>
+          ) : null}
+          {messages.filter(m => m.role !== 'system').map((m, i) => {
+            const isUser = m.role === 'user';
+            const badgeColor = emotionColor(m.emotion);
+            const icon = emotionIcon(m.emotion);
+            return (
+              <div
+                key={i}
+                className={`group mb-3 p-3 rounded-md whitespace-pre-wrap transition shadow-sm hover:shadow ${isUser ? 'bg-indigo-50 self-end' : 'bg-gray-50'}`}
+              >
+                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between">
+                  <span>{isUser ? (user?.role_id === 2 ? 'Docente' : 'Tú') : 'Asistente'}</span>
+                  {m.created_at && (
+                    <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
+                  )}
+                </div>
+                <div className="text-[13px] md:text-sm leading-relaxed">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
+                {m.emotion && (
+                  <div className="mt-2 inline-flex items-center gap-1 text-[10px]" aria-label={`Emoción detectada: ${m.emotion}`}>
+                    <span className="uppercase text-gray-500">Emoción:</span>
+                    <span
+                      title="Clasificación automática (puede contener errores)"
+                      className="px-2 py-[3px] rounded-full border flex items-center gap-1"
+                      style={{
+                        backgroundColor: badgeColor.bg,
+                        color: badgeColor.fg,
+                        borderColor: badgeColor.border
+                      }}
+                    >{icon} {m.emotion}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div ref={endRef} />
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-2 border-t flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Escribe tu mensaje..."
+            className="flex-1 rounded border px-2 py-1 text-sm"
+            disabled={streaming}
+          />
+          <button className="px-3 py-1 rounded bg-indigo-600 text-white text-sm disabled:opacity-50" disabled={streaming}>Enviar</button>
+        </form>
+      </div>
+    </div>
+  );
+}

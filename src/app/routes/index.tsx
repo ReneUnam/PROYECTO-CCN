@@ -20,6 +20,7 @@ import AdminQuestionsDashboard from "@/features/questions/pages/AdminQuestionsDa
 import { JournalAdminPage } from "@/features/journal/pages/JournalAdminPage";
 import MailboxPage from "@/features/mailbox/pages/MailboxPage";
 import AdminMailboxPage from "@/features/mailbox/pages/AdminMailboxPage";
+import ChatWindow from "@/features/chatbot/components/ChatWindow";
 
 const router = createBrowserRouter([
   
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
           { path: "/journal/session/emotions", element: <JournalEmotionSessionPage /> },
           { path: "/journal/session/self-care", element: <JournalSelfCareSessionPage /> },
           { path: "/forum", element: <MailboxPage /> },
+          { path: "/chatbot", element: <ChatWindow /> },
 
           // Solo administradores
           {
