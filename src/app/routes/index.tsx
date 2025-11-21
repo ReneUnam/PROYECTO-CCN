@@ -18,6 +18,8 @@ import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 import AdminAssignmentsPage from "@/features/questions/pages/AdminAssignmentsPage";
 import AdminQuestionsDashboard from "@/features/questions/pages/AdminQuestionsDashboard";
 import { JournalAdminPage } from "@/features/journal/pages/JournalAdminPage";
+import JournalEmotionPage from "@/features/journal/pages/JournalEmotionPage";
+import JournalSelfCarePage from "@/features/journal/pages/JournalSelfCarePage";
 
 const router = createBrowserRouter([
   
@@ -40,10 +42,12 @@ const router = createBrowserRouter([
           { path: "/questions", element: <QuestionsPage /> },
           { path: "/questions/session/:assignmentId", element: <AssignmentSessionPage /> },
           { path: "/journal", element: <JournalHubPage /> },
-          { path: "/journal/emotions", element: <JournalTypePage type="emotions" /> },
-          { path: "/journal/self-care", element: <JournalTypePage type="self-care" /> },
+          // { path: "/journal/emotions", element: <JournalTypePage type="emotions" /> },
+          // { path: "/journal/self-care", element: <JournalTypePage type="self-care" /> },
           { path: "/journal/session/emotions", element: <JournalEmotionSessionPage /> },
           { path: "/journal/session/self-care", element: <JournalSelfCareSessionPage /> },
+          { path: "/journal/emotions", element: <JournalEmotionPage /> },
+          { path: "/journal/self-care", element: <JournalSelfCarePage /> },
 
           // Solo administradores
           {

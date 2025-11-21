@@ -4,6 +4,7 @@ import { PendingAssignments } from "@/features/questions/components/PendingAssig
 import { useEffect, useState } from "react";
 import { supabase } from "@/core/api/supabaseClient";
 import { getMyStreakAll } from "@/features/journal/api/journalApi";
+import { getStreak } from "@/features/journal/api/journalApi";
 
 const quickActions = [
   {
@@ -40,12 +41,15 @@ const quickActions = [
     description: 'Recursos pedagógicos y documentos',
     route: '/resources',
     // allowed solo para role_id 2 (teacher)
-    allowedRoleIds: [1,2],
+    allowedRoleIds: [1, 2],
   },
 ];
 
 export function DashboardPage() {
-
+    const [streakEmo, setStreakEmo] = useState(0);
+  const [streakSelf, setStreakSelf] = useState(0);
+  const [streak, setStreak] = useState(0);
+  useEffect(() => { (async () => { const s = await getStreak("emotions"); setStreak(s.current_streak ?? 0); })(); }, []);
   const { user } = useAuth();
   const roleId = user?.role_id ?? 3; // 1=admin,2=teacher,3=student
   const isAdmin = roleId === 1;
@@ -54,7 +58,20 @@ export function DashboardPage() {
 
   const [journalStreak, setJournalStreak] = useState<number>(0);
   const [answeredToday, setAnsweredToday] = useState<number>(0);
-  
+  useEffect(() => {
+    (async () => {
+      const [a, b] = await Promise.all([getStreak("emotions"), getStreak("self-care")]);
+      setStreakEmo(a.current_streak ?? 0);
+      setStreakSelf(b.current_streak ?? 0);
+    })();
+  }, []);
+    useEffect(() => {
+    (async () => {
+      const [a, b] = await Promise.all([getStreak("self-care"), getStreak("emotions")]);
+      setStreakSelf(a.current_streak ?? 0);
+      setStreakEmo(b.current_streak ?? 0);
+    })();
+  }, []);
   useEffect(() => {
     (async () => {
       const streaks = await getMyStreakAll().catch(() => []);
@@ -68,11 +85,11 @@ export function DashboardPage() {
   }, []);
 
   const highlights = [
-    { id: "mood", title: "Estado actual", value: "Equilibrado" },
-    { id: "streak", title: "Racha del diario", value: `${journalStreak} día${journalStreak === 1 ? "" : "s"}` },
+    { id: "selfStreak", title: "Constancia del diario de autocuido", value: `${streakSelf} día${streakSelf === 1 ? "" : "s"}` },
+    { id: "emoStreak", title: "Constancia del diario emocional", value: `${streakEmo} día${streakEmo === 1 ? "" : "s"}` },
     { id: "answers", title: "Preguntas contestadas hoy", value: String(answeredToday) },
   ];
-  
+
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">
       <section className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-lg">

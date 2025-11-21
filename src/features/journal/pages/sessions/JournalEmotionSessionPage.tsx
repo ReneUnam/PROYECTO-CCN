@@ -4,41 +4,28 @@ import { ChevronLeft, Save, CheckCircle2 } from "lucide-react";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { LikertScale } from "@/features/journal/components/LikertScale";
 import { ChipToggle } from "@/features/journal/components/ChipToggle";
-import { startJournalEntry, getActiveItems, upsertAnswer, completeEntry } from "@/features/journal/api/journalApi";
+import { startJournalEntry, getActiveItems, upsertAnswer, finalizeEntryAndStreak } from "@/features/journal/api/journalApi";
 import { clearLocalAnswers, loadLocalAnswers, saveLocalAnswers, useBeforeUnloadDirty } from "@/features/journal/hooks/useJournalAutosave";
+import { JournalCelebrate } from "../../components/JournalCelebrate";
 
 export function JournalEmotionSessionPage() {
   const navigate = useNavigate();
   const [sp] = useSearchParams();
+
   const [entryId, setEntryId] = useState<string | null>(sp.get("entry"));
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Local UI state
+  const [celebrate, setCelebrate] = useState<{ current: number; best: number } | null>(null);
   const [selected, setSelected] = useState<Record<number, Set<string>>>({});
   const [scales, setScales] = useState<Record<number, number | undefined>>({});
 
-  function getLabels(it: any) {
-    const min = it.scale_min ?? 1;
-    const max = it.scale_max ?? 5;
-    const n = Math.min(5, Math.max(2, max - min + 1));
-    if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
-      const a = Array.from({ length: n }, (_, i) => (it.scale_labels[i] ?? "").trim());
-      return a;
-    }
-    const a = Array.from({ length: n }, () => "");
-    if (it.scale_left_label) a[0] = String(it.scale_left_label);
-    if (it.scale_right_label) a[n - 1] = String(it.scale_right_label);
-    return a;
-  }
-  // Guardar borrador si hay requeridos sin responder
   const totalRequired = items.filter((i) => i.required).length;
   const totalAnswered = useMemo(() => {
-    const answered = items.filter((i) =>
+    return items.filter((i) =>
       i.kind === "scale" ? scales[i.item_id] != null : (selected[i.item_id]?.size ?? 0) > 0
     ).length;
-    return answered;
   }, [items, selected, scales]);
+
   const hasPendingRequired = useMemo(() => {
     const reqIds = new Set(items.filter((i) => i.required).map((i) => i.item_id));
     for (const id of reqIds) {
@@ -50,17 +37,29 @@ export function JournalEmotionSessionPage() {
   }, [items, selected, scales]);
   useBeforeUnloadDirty(hasPendingRequired);
 
-  // Carga inicial
+  function getLabels(it: any) {
+    const min = it.scale_min ?? 1;
+    const max = it.scale_max ?? 5;
+    const n = Math.min(5, Math.max(2, max - min + 1));
+    if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
+      return Array.from({ length: n }, (_, i) => (it.scale_labels[i] ?? "").trim());
+    }
+    const a = Array.from({ length: n }, () => "");
+    if (it.scale_left_label) a[0] = String(it.scale_left_label);
+    if (it.scale_right_label) a[n - 1] = String(it.scale_right_label);
+    return a;
+  }
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const id = entryId ?? (await startJournalEntry("emotions"));
         setEntryId(id);
+
         const its = await getActiveItems("emotions");
         setItems(its);
 
-        // Restaurar de localStorage (borrador local)
         const saved = id ? loadLocalAnswers(id) : {};
         if (saved.selected) {
           setSelected(
@@ -75,7 +74,6 @@ export function JournalEmotionSessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persistencia local (autosave) cada cambio
   useEffect(() => {
     if (!entryId) return;
     const toSave = {
@@ -95,11 +93,7 @@ export function JournalEmotionSessionPage() {
         if (!multi) next.clear();
         next.add(key);
       }
-      // Fire-and-forget server save with full selection
-      const arr = Array.from(next);
-      if (entryId) {
-        void upsertAnswer(entryId, itemId, { options: arr });
-      }
+      if (entryId) void upsertAnswer(entryId, itemId, { options: Array.from(next) });
       return { ...prev, [itemId]: next };
     });
   };
@@ -112,45 +106,36 @@ export function JournalEmotionSessionPage() {
     });
   };
 
-  const onSaveDraft = () => {
-    // Ya se guarda automáticamente (local + servidor). Solo feedback/navegación.
-    navigate("/journal");
-  };
+  const onSaveDraft = () => navigate("/journal/emotions");
 
   const onFinish = async () => {
     if (!entryId) return;
-    await completeEntry(entryId);
-    clearLocalAnswers(entryId);
-    navigate("/journal");
-  };
-
-  function getScaleLabels(it: any) {
-    const min = it.scale_min ?? 1;
-    const max = it.scale_max ?? 5;
-    const count = Math.min(5, Math.max(2, max - min + 1));
-
-    // si ya hay arreglo, úsalo
-    if (Array.isArray(it.scale_labels) && it.scale_labels.length) {
-      const a = Array.from({ length: count }, (_, i) => (it.scale_labels[i] ?? "").trim());
-      return a;
+    try {
+      const s = await finalizeEntryAndStreak(entryId, "emotions");
+      clearLocalAnswers(entryId);
+      setCelebrate({ current: s.current_streak ?? 0, best: s.best_streak ?? 0 });
+      setTimeout(() => navigate("/journal/emotions"), 2000);
+    } catch (e) {
+      console.error(e);
     }
-    // fallback: solo extremos
-    const a = Array.from({ length: count }, () => "");
-    if (it.scale_left_label) a[0] = String(it.scale_left_label);
-    if (it.scale_right_label) a[count - 1] = String(it.scale_right_label);
-    return a;
-  }
+  };
 
   return (
     <section className="mx-auto max-w-6xl text-text">
       <header className="sticky top-0 z-10 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
         <div className="flex items-center justify-between gap-3">
-          <button type="button" onClick={() => navigate(-1)} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted"
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="flex-1">
             <h1 className="text-base font-semibold">Diario emocional</h1>
-            <p className="text-xs text-text/70">Respondidas: {Math.min(totalAnswered, totalRequired)}/{totalRequired}</p>
+            <p className="text-xs text-text/70">
+              Respondidas: {Math.min(totalAnswered, totalRequired)}/{totalRequired}
+            </p>
           </div>
         </div>
       </header>
@@ -158,13 +143,9 @@ export function JournalEmotionSessionPage() {
       <div className="space-y-6 p-4">
         {items.map((it) => (
           <section key={it.item_id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-
+            <h2 className="text-sm font-semibold">{it.prompt}</h2>
             {!!it.helper && <p className="text-xs text-text/70">{it.helper}</p>}
-            {it.kind === "options" && (
-              <div className="mt-3 flex flex-wrap gap-2 justify-start">
-                {/* ...tu render de ChipToggle/acciones aquí... */}
-              </div>
-            )}
+
             {it.kind === "scale" ? (
               <div className="mt-3">
                 <LikertScale
@@ -201,7 +182,10 @@ export function JournalEmotionSessionPage() {
 
       <footer className="sticky bottom-0 border-t border-border bg-surface/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
         <div className="mx-auto flex max-w-6xl flex-col items-stretch justify-end gap-2 sm:flex-row">
-          <button onClick={onSaveDraft} className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted">
+          <button
+            onClick={onSaveDraft}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted"
+          >
             <Save className="h-4 w-4" /> Guardar borrador
           </button>
           <button
@@ -213,6 +197,14 @@ export function JournalEmotionSessionPage() {
           </button>
         </div>
       </footer>
+
+      {celebrate && (
+        <JournalCelebrate
+          title="¡Gracias por compartir cómo te sientes!"
+          subtitle="La constancia te ayuda a conocerte. Paso a paso."
+          streak={celebrate}
+        />
+      )}
     </section>
   );
 }

@@ -9,11 +9,126 @@ export type JournalItemPatch = {
   scale_labels?: string[] | null;
   // ...otros campos de item...
 };
-export async function startJournalEntry(type: JournalType) {
-    const { data, error } = await supabase.rpc("journal_start_entry", { p_type: type });
-    if (error) throw error;
-    return data as string;
+async function getMyProfileIdSafe(): Promise<string> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) throw new Error("Not authenticated");
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("auth_user_id", auth.user.id)
+    .single();
+  if (error) throw error;
+  return data.id as string;
 }
+
+// Finaliza la entrada y actualiza racha con upsert por (profile_id,type)
+export async function finalizeEntryAndStreak(entryId: string, type: JournalType) {
+  const todayISO = new Date().toISOString();
+  const today = todayISO.slice(0, 10);
+
+  // Marca la entrada como completada y obtiene profile_id
+  const { data: entry, error: e1 } = await supabase
+    .from("journal_entries")
+    .update({ status: "completed", completed_at: todayISO, entry_date: today })
+    .eq("id", entryId)
+    .select("id, profile_id, entry_date")
+    .single();
+  if (e1) throw e1;
+
+  const profile_id = entry.profile_id;
+
+  // Leer racha actual por (profile_id,type)
+  const { data: s, error: e2 } = await supabase
+    .from("journal_streaks")
+    .select("current_streak, best_streak, last_entry_date")
+    .eq("profile_id", profile_id)
+    .eq("type", type)
+    .maybeSingle();
+  if (e2) throw e2;
+
+  // Calcular nueva racha
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const yesterday = y.toISOString().slice(0, 10);
+
+  let current = 1;
+  if (s) {
+    const last = s.last_entry_date ? String(s.last_entry_date).slice(0, 10) : null;
+    if (last === today) current = s.current_streak ?? 1;         // ya contada hoy
+    else if (last === yesterday) current = (s.current_streak ?? 0) + 1;
+    else current = 1;
+  }
+  const best = Math.max(s?.best_streak ?? 0, current);
+
+  // Upsert por (profile_id,type). Requiere índice único en esas columnas.
+  const { error: eUp } = await supabase
+    .from("journal_streaks")
+    .upsert(
+      { profile_id, type, current_streak: current, best_streak: best, last_entry_date: today },
+      { onConflict: "profile_id,type" }
+    );
+  if (eUp) throw eUp;
+
+  return { current_streak: current, best_streak: best };
+}
+
+// Crea o reusa borrador de HOY. Si ya completaste hoy → error "already_completed".
+// Retorna siempre el id de la entrada.
+export async function startJournalEntry(type: JournalType) {
+  const profile_id = await getMyProfileIdSafe(); // o tu función original
+  const version_id = await getCurrentVersionId(type);
+  const today = new Date().toISOString().slice(0,10);
+  // reutiliza borrador de hoy
+  const { data: existing, error: e1 } = await supabase
+    .from("journal_entries")
+    .select("id,status")
+    .eq("profile_id", profile_id)
+    .eq("type", type)
+    .eq("entry_date", today)
+    .maybeSingle();
+  if (e1 && e1.code !== "PGRST116") throw e1;
+  if (existing) {
+    if (existing.status === "completed") throw Object.assign(new Error("already_completed"), { code: "already_completed" });
+    return existing.id;
+  }
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .insert({ profile_id, type, version_id, status: "draft", entry_date: today })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+// Devuelve el estado de la entrada de HOY del usuario para ese tipo
+export async function getTodayEntryStatus(type: JournalType): Promise<{ status: "none" | "draft" | "completed"; entryId?: string; }> {
+  const profile_id = await getMyProfileIdSafe();
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .select("id, status")
+    .eq("profile_id", profile_id)
+    .eq("type", type)
+    .eq("entry_date", new Date().toISOString().slice(0, 10))
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error && error.code !== "PGRST116") throw error;
+  if (!data) return { status: "none" };
+  if (data.status === "completed") return { status: "completed", entryId: data.id };
+  return { status: "draft", entryId: data.id };
+}
+
+async function getCurrentVersionId(type: "emotions" | "self-care"): Promise<number> {
+  const { data, error } = await supabase
+    .from("journal_forms")
+    .select("current_version_id")
+    .eq("type", type)
+    .maybeSingle(); // <- en vez de .single()
+  if (error) throw error;
+  if (!data) throw Object.assign(new Error("no_form"), { code: "no_form" });
+  if (!data.current_version_id) throw Object.assign(new Error("no_version"), { code: "no_version" });
+  return data.current_version_id as number;
+}
+
 
 export async function getActiveItems(type: JournalType) {
   const { data, error } = await supabase
@@ -46,6 +161,31 @@ export async function getMyStreakAll(type?: string) {
         .eq("type", type);
     if (error) throw error;
     return data ?? [];
+}
+
+
+
+// Devuelve racha del usuario para un tipo; ignora si falta el tipo
+export async function getStreak(type?: JournalType) {
+  if (!type) return { current_streak: 0, best_streak: 0, last_entry_date: null };
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) throw new Error("auth_missing");
+
+  const { data: prof, error: eP } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("auth_user_id", auth.user.id)
+    .single();
+  if (eP) throw eP;
+
+  const { data, error } = await supabase
+    .from("journal_streaks")
+    .select("current_streak, best_streak, last_entry_date")
+    .eq("profile_id", prof.id)
+    .eq("type", type)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? { current_streak: 0, best_streak: 0, last_entry_date: null };
 }
 
 /* Admin */
@@ -242,3 +382,70 @@ export async function updateJournalItemScale(itemId: number, params: {
   if (error) throw error;
   return normalizeItem(data);
 }
+
+// Guardar respuestas
+export async function upsertScaleAnswer(entry_id: string, item_id: number, scale_value: number) {
+  const { data, error } = await supabase
+    .from("journal_answers")
+    .upsert({ entry_id, item_id, scale_value })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+export async function upsertOptionsAnswer(entry_id: string, item_id: number, options_values: string[]) {
+  const { data, error } = await supabase
+    .from("journal_answers")
+    .upsert({ entry_id, item_id, options_values })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Historial de entradas (del usuario)
+export async function getJournalHistory(type: JournalType, limit = 30) {
+  const profile_id = await getMyProfileIdSafe();
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .select("id, entry_date, status, created_at, completed_at, version_id")
+    .eq("profile_id", profile_id)
+    .eq("type", type)
+    .order("entry_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+// Respuestas de una entrada (con metadatos del ítem)
+export async function getEntryAnswers(entry_id: string) {
+  const { data, error } = await supabase
+    .from("journal_answers")
+    .select("item_id, scale_value, options_values")
+    .eq("entry_id", entry_id);
+  if (error) throw error;
+
+  const ids = (data ?? []).map((x) => x.item_id);
+  if (!ids.length) return [];
+
+  const { data: items, error: e2 } = await supabase
+    .from("journal_items")
+    .select("id, kind, prompt, scale_min, scale_max, scale_labels, scale_left_label, scale_right_label, options, multi_select")
+    .in("id", ids);
+  if (e2) throw e2;
+
+  const nrm = (raw: any) => {
+    let labels: string[] = [];
+    try {
+      labels = Array.isArray(raw.scale_labels)
+        ? raw.scale_labels
+        : typeof raw.scale_labels === "string"
+          ? JSON.parse(raw.scale_labels)
+          : [];
+    } catch { labels = []; }
+    return { ...raw, scale_labels: labels };
+  };
+  const map = new Map(items?.map((i: any) => [i.id, nrm(i)]) ?? []);
+  return (data ?? []).map((a) => ({ ...a, item: map.get(a.item_id) }));
+}
+
