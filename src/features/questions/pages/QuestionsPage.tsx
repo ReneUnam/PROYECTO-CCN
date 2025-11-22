@@ -44,7 +44,8 @@ export function QuestionsPage() {
   const openAssignment = async (a: UiItem) => {
     try {
       const sessionId = await startAssignment(a.assignment_id);
-      navigate(`/questions/session/${a.assignment_id}?session=${sessionId}`);
+      const readonly = a._status === "completed" ? "&readonly=1" : "";
+      navigate(`/questions/session/${a.assignment_id}?session=${sessionId}${readonly}`);
     } catch (e: any) {
       alert(e.message || "No se pudo iniciar la sesión");
     }
@@ -113,15 +114,22 @@ export function QuestionsPage() {
                   <button
                     onClick={() => openAssignment(a)}
                     className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary/90"
-                    disabled={a._status === "completed"}
                   >
-                    {a._status === "completed" ? "Completado" : "Abrir"}
+                    {a._status === "completed" ? "Ver" : "Abrir"}
                   </button>
                 </div>
               </div>
             </article>
           );
         })}
+
+        {items.length === 0 && (
+          <div className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-text/70">
+            {tab === "new" && "No tienes preguntas nuevas asignadas por ahora."}
+            {tab === "overdue" && "¡Excelente! No tienes preguntas vencidas."}
+            {tab === "completed" && "Aún no has completado preguntas asignadas."}
+          </div>
+        )}
       </div>
     </section>
   );
