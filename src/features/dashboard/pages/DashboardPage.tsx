@@ -46,9 +46,9 @@ const quickActions = [
   },
 ];
 
-export function DashboardPage() {
 
-  const { user } = useAuth();
+export function DashboardPage() {
+  const { user, loading: authLoading } = useAuth();
   const [streakEmo, setStreakEmo] = useState<number | null>(null);
   const [streakSelf, setStreakSelf] = useState<number | null>(null);
   const [journalStreak, setJournalStreak] = useState<number | null>(null);
@@ -56,6 +56,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading || !user) return;
     let mounted = true;
     (async () => {
       try {
@@ -75,21 +76,20 @@ export function DashboardPage() {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [authLoading, user]);
 
   const roleId = user?.role_id ?? 3; // 1=admin,2=teacher,3=student
   const isAdmin = roleId === 1;
   const displayName = user?.full_name ?? 'Usuario';
   const visibleActions = quickActions.filter(a => isAdmin || !a.allowedRoleIds || a.allowedRoleIds.includes(roleId));
 
-
   const highlights = [
-    { id: "selfStreak", title: "Constancia del diario de autocuido", value: streakSelf != null ? `${streakSelf} día${streakSelf === 1 ? "" : "s"}` : "-" },
-    { id: "emoStreak", title: "Constancia del diario emocional", value: streakEmo != null ? `${streakEmo} día${streakEmo === 1 ? "" : "s"}` : "-" },
+    { id: "selfStreak", title: "Constancia del diario de autocuido", value: streakSelf != null ? `${streakSelf} día${streakSelf === 1 ? '' : 's'}` : "-" },
+    { id: "emoStreak", title: "Constancia del diario emocional", value: streakEmo != null ? `${streakEmo} día${streakEmo === 1 ? '' : 's'}` : "-" },
     { id: "answers", title: "Preguntas contestadas hoy", value: answeredToday != null ? String(answeredToday) : "-" },
   ];
 
-  if (loading || !user) return <FullScreenLoader />;
+  if (authLoading || loading || !user) return <FullScreenLoader />;
 
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">

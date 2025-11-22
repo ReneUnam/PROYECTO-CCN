@@ -79,20 +79,11 @@ export const useAuth = () => {
       await loadFromSession(session);
     })();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'INITIAL_SESSION') return;
-      // Solo recargar si la sesión realmente cambió
-      const sessionId = session?.user?.id || null;
-      if (sessionId !== lastSessionId) {
-        loadFromSession(session);
-      }
-    });
-
+    // No registrar ningún listener de sesión para evitar refresco molesto
     return () => {
       active = false;
-      subscription.unsubscribe();
     };
-  }, [lastSessionId, user]);
+  }, []);
 
   return { user, loading };
 };

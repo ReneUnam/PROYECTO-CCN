@@ -1,3 +1,5 @@
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
@@ -15,6 +17,7 @@ export function Layout({ children }: LayoutProps) {
 
   const [isDesktop, setIsDesktop] = useState(getIsDesktop());
   const [sidebarOpen, setSidebarOpen] = useState(getIsDesktop());
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!mq) return;
@@ -30,6 +33,8 @@ export function Layout({ children }: LayoutProps) {
     // padding horizontal del contenido
     isDesktop && !sidebarOpen ? "px-6 lg:px-10 xl:px-16 2xl:px-24 max-w-6xl mx-auto" : "px-6"
   );
+
+  if (loading || !user) return <FullScreenLoader />;
 
   return (
     // Pantalla completa sin scroll del documento
@@ -52,7 +57,6 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Área de contenido: solo aquí hay scroll */}
-      {/* <main className="pt-16 md:pl-64 h-[calc(100vh-4rem)] overflow-y-auto"> */}
       <main
         className={clsx(
           "fixed inset-x-0 top-16 bottom-0 overflow-y-auto", // sin transición para evitar reflows costosos

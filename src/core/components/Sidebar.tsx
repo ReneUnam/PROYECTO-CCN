@@ -53,13 +53,16 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Configuración", path: "/settings", icon: Settings },
   ];
 
+
   const { user } = useAuth();
+
   const roleId = user?.role_id ?? 3;
   const isAdmin = roleId === 1;
 
-  const visibleLinks = links.filter(
-    (l) => isAdmin || !l.allowedRoleIds || l.allowedRoleIds.includes(roleId)
-  );
+  // Si no hay usuario, no mostrar links
+  const visibleLinks = user
+    ? links.filter((l) => isAdmin || !l.allowedRoleIds || l.allowedRoleIds.includes(roleId))
+    : [];
 
   const homeLink = visibleLinks.find((l) => l.path === "/dashboard");
   const otherLinks = visibleLinks.filter((l) => l.path !== "/dashboard");
