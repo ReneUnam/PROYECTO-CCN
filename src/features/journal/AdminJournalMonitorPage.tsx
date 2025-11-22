@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "@/components/toast/ToastProvider";
 import {
     adminListJournalEntries,
     adminGetEntryWithAnswers,
@@ -21,6 +22,7 @@ type Row = {
 };
 
 export function AdminJournalMonitorPage() {
+        const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<Row[]>([]);
     const [type, setType] = useState<JournalType | "all">("all");
@@ -68,7 +70,7 @@ export function AdminJournalMonitorPage() {
             setOpenAnswers(data);
         } catch (e) {
             console.error(e);
-            alert("Error cargando respuestas");
+            toast.error("Error cargando respuestas");
         } finally {
             setFetchingAnswers(false);
         }

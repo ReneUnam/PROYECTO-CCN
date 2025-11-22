@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useToast } from '@/components/toast/ToastProvider';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ type SuggestionRow = {
 };
 
 export default function MailboxPage() {
+    const toast = useToast();
   const { user, loading } = useAuth();
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState('');
@@ -66,7 +68,7 @@ export default function MailboxPage() {
           e.preventDefault();
           if (!user) return;
           if (!canSend) {
-            alert('Tu rol no puede enviar sugerencias.');
+            toast.warning('Tu rol no puede enviar sugerencias.');
             return;
           }
           setSubmitting(true);
@@ -83,7 +85,7 @@ export default function MailboxPage() {
             setMessage('');
             await refresh();
           } catch (err: any) {
-            alert(err?.message ?? 'No se pudo enviar');
+            toast.error(err?.message ?? 'No se pudo enviar');
           } finally {
             setSubmitting(false);
           }

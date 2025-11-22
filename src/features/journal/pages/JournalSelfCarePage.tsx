@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/toast/ToastProvider";
 import { useNavigate } from "react-router-dom";
 import { startJournalEntry, getJournalHistory, getEntryAnswers, getTodayEntryStatus } from "@/features/journal/api/journalApi";
 
 export default function JournalSelfCarePage() {
+    const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<any[]>([]);
@@ -34,8 +36,8 @@ export default function JournalSelfCarePage() {
     } catch (e: any) {
       console.error("startJournalEntry error:", e);
       if (e?.code === "already_completed") await load();
-      else if (e?.code === "no_version") alert("No hay versión publicada.");
-      else alert(e.message || "Error al iniciar.");
+      else if (e?.code === "no_version") toast.error("No hay versión publicada.");
+      else toast.error(e.message || "Error al iniciar.");
     } finally {
       setStarting(false);
     }

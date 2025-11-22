@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
+import { useToast } from "@/components/toast/ToastProvider";
+import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import { useNavigate } from "react-router-dom";
 import {
   ListChecks, Clock, CalendarClock, Users, HelpCircle, CheckCircle2, AlertTriangle,
 } from "lucide-react";
-import { getMyAssignments, startAssignment, type Assignment as ApiAssignment } from "@/features/questions/api/assignmentsApi";
+import { getMyAssignments, startAssignment, getLastSessionId, getUserSessionsWithResponses, type Assignment as ApiAssignment } from "@/features/questions/api/assignmentsApi";
 
 type Status = "new" | "overdue" | "completed";
 
@@ -13,6 +15,8 @@ type UiItem = ApiAssignment & {
 };
 
 export function QuestionsPage() {
+    const toast = useToast();
+    const confirm = useConfirm();
   const [tab, setTab] = useState<Status>("new");
   const [data, setData] = useState<ApiAssignment[]>([]);
   const navigate = useNavigate();
@@ -43,11 +47,39 @@ export function QuestionsPage() {
 
   const openAssignment = async (a: UiItem) => {
     try {
-      const sessionId = await startAssignment(a.assignment_id);
-      const readonly = a._status === "completed" ? "&readonly=1" : "";
+      let sessionId: string | null = null;
+      let readonly = "";
+      if (a._status === "completed") {
+        const sessions = await getUserSessionsWithResponses(a.assignment_id);
+        if (!sessions.length) {
+          toast.warning("No se encontró una sesión completada con respuestas para esta asignación.");
+          return;
+        }
+        if (sessions.length === 1) {
+          sessionId = sessions[0].id;
+        } else {
+          // Mostrar lista para elegir
+          const options = sessions.map((s, i) => `${i + 1}. ${s.id} (${s.count} respuestas, ${s.started_at ? new Date(s.started_at).toLocaleString() : ''})`).join('\n');
+          const choice = await confirm({
+            title: "Selecciona sesión",
+            message: `Tienes varias sesiones con respuestas para esta asignación.\nElige el número de la sesión a ver:\n${options}`,
+            confirmText: "Ver sesión",
+            cancelText: "Cancelar"
+          }) ? window.prompt(`Escribe el número de la sesión a ver:\n${options}`) : null;
+          const idx = Number(choice) - 1;
+          if (choice == null || isNaN(idx) || idx < 0 || idx >= sessions.length) {
+            toast.error("Selección inválida.");
+            return;
+          }
+          sessionId = sessions[idx].id;
+        }
+        readonly = "&readonly=1";
+      } else {
+        sessionId = await startAssignment(a.assignment_id);
+      }
       navigate(`/questions/session/${a.assignment_id}?session=${sessionId}${readonly}`);
     } catch (e: any) {
-      alert(e.message || "No se pudo iniciar la sesión");
+      toast.error(e.message || "No se pudo abrir la sesión");
     }
   };
 

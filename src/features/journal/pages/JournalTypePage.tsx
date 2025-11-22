@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/toast/ToastProvider";
+import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import { Trash2, Play } from "lucide-react";
 import { getMyEntries, deleteJournalEntry, startJournalEntry } from "@/features/journal/api/journalApi";
 
@@ -93,6 +95,8 @@ function EntryList({ title, items, emptyText, onDelete, onResume, deletingIds = 
 }
 
 export function JournalTypePage({ type }: { type: "emotions" | "self-care" }) {
+    const toast = useToast();
+    const confirm = useConfirm();
   const navigate = useNavigate();
   const [drafts, setDrafts] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
@@ -113,8 +117,14 @@ export function JournalTypePage({ type }: { type: "emotions" | "self-care" }) {
     })();
   }, [type]);
 
-    const onDeleteDraft = async (id: string) => {
-    const ok = window.confirm("Eliminar borrador? Esta acción no se puede deshacer.");
+  const onDeleteDraft = async (id: string) => {
+    const ok = await confirm({
+      title: "Eliminar borrador",
+      message: "¿Eliminar borrador? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "danger"
+    });
     if (!ok) return;
 
     setDeletingIds((s) => [...s, id]); // deshabilita fila/botones
@@ -129,7 +139,7 @@ export function JournalTypePage({ type }: { type: "emotions" | "self-care" }) {
       setDrafts((x) => x.filter((d) => d.id !== id));
     } catch (err) {
       console.error("Error eliminando borrador:", err);
-      alert("No se pudo eliminar el borrador. Intenta de nuevo.");
+      toast.error("No se pudo eliminar el borrador. Intenta de nuevo.");
     } finally {
       setDeletingIds((s) => s.filter((x) => x !== id));
     }

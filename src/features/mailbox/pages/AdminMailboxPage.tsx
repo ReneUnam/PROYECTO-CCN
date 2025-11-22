@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useToast } from '@/components/toast/ToastProvider';
 import { adminListSuggestions, deleteSuggestion } from '../api/mailboxApi';
 
 type Row = {
@@ -13,6 +14,7 @@ type Row = {
 };
 
 export default function AdminMailboxPage() {
+    const toast = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -86,7 +88,7 @@ export default function AdminMailboxPage() {
                     await deleteSuggestion(confirmId);
                     setRows(rows.filter(r => r.id !== confirmId));
                   } catch (e: any) {
-                    alert(e.message || 'Error al eliminar');
+                    toast.error(e.message || 'Error al eliminar');
                   } finally {
                     setDeletingId(null);
                     setConfirmId(null);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useToast } from "@/components/toast/ToastProvider";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -24,12 +25,17 @@ import { FullScreenLoader } from "@/components/FullScreenLoader";
 type Q = { id: number; prompt: string };
 
 export function AssignmentSessionPage() {
+    const toast = useToast();
   const { assignmentId } = useParams();
   const [sp, setSp] = useSearchParams();
   const navigate = useNavigate();
 
-  const readOnly =
-    sp.get("readonly") === "1" || sp.get("readonly") === "true";
+  // Detectar solo lectura por parámetro de URL
+  const [readOnly, setReadOnly] = useState(() => sp.get("readonly") === "1");
+
+  useEffect(() => {
+    setReadOnly(sp.get("readonly") === "1");
+  }, [sp]);
 
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session"));
   const [surveyId, setSurveyId] = useState<number | null>(null);
@@ -47,7 +53,7 @@ export function AssignmentSessionPage() {
         setSurveyId(survey_id);
         setSurveyName(survey_name);
       })
-      .catch((e) => alert(e.message));
+      .catch((e) => toast.error(e.message || "Error al cargar la asignación"));
   }, [assignmentId]);
 
   // Crear sesión si no existe (modo editable)
@@ -59,7 +65,7 @@ export function AssignmentSessionPage() {
         sp.set("session", sid);
         setSp(sp, { replace: true });
       })
-      .catch((e) => alert(e.message));
+      .catch((e) => toast.error(e.message || "Error al iniciar la sesión"));
   }, [assignmentId, sessionId, readOnly, sp, setSp]);
 
   // Cargar preguntas
@@ -76,11 +82,17 @@ export function AssignmentSessionPage() {
     getSessionResponses(sessionId)
       .then((map) => {
         const obj: Record<number, { text: string }> = {};
-        map.forEach(
-          (v, k) =>
-            (obj[k] =
-              typeof v?.text === "string" ? { text: v.text } : { text: "" })
-        );
+        map.forEach((v, k) => {
+          if (v == null) {
+            obj[k] = { text: "" };
+          } else if (typeof v === "string") {
+            obj[k] = { text: v };
+          } else if (typeof v === "object" && typeof v.text === "string") {
+            obj[k] = { text: v.text };
+          } else {
+            obj[k] = { text: JSON.stringify(v) };
+          }
+        });
         setAnswers(obj);
       })
       .catch((e) => console.error(e));
@@ -109,74 +121,75 @@ export function AssignmentSessionPage() {
   async function saveDraft() {
     if (readOnly || !current) return;
     await persist(current.id, answers[current.id] ?? { text: "" });
-    alert("Borrador guardado");
+    toast.success("Borrador guardado");
   }
 
   async function onSubmitAll() {
     if (readOnly || !sessionId) return;
+    console.log("[DEBUG] Enviando respuestas para sesión:", sessionId, answers);
     await Promise.all(
       Object.entries(answers).map(([qid, val]) =>
         persist(Number(qid), val as { text: string })
       )
     );
     try {
+      console.log("[DEBUG] Marcando sesión como completada:", sessionId);
       await completeSession(sessionId);
-      alert("Respuestas enviadas");
+      toast.success("Respuestas enviadas. Verifica en la base de datos si la sesión tiene status 'completed'.");
       navigate("/questions");
     } catch (e: any) {
-      alert(e.message || "No se pudo enviar");
+      toast.error(e.message || "No se pudo enviar");
     }
   }
 
   if (!surveyId || !total || !sessionId) return <FullScreenLoader />;
 
-  // Modo lectura: diseño tipo tarjetas
   if (readOnly) {
+    // Vista solo lectura: lista vertical simple de preguntas y respuestas
     return (
-      <div className="mx-auto max-w-5xl px-4 py-6 text-text">
-        <div className="mb-6 flex items-center justify-between gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted"
-            >
-              ← Volver
-            </button>
-            <h1 className="text-lg font-semibold truncate">
-              Tus respuestas: {surveyName || "Asignación"}
-            </h1>
-            <button
-              onClick={() => navigate("/questions")}
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted"
-            >
-              Cerrar
-            </button>
+      <div className="mx-auto max-w-3xl px-4 py-8 text-text bg-surface min-h-screen transition-colors dark:bg-surface">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted dark:bg-surface dark:border-border dark:text-text"
+          >
+            ← Volver
+          </button>
+          <h1 className="text-xl font-bold truncate dark:text-text">
+            {surveyName || "Respuestas de la sesión"}
+          </h1>
+          <button
+            onClick={() => navigate("/questions")}
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted dark:bg-surface dark:border-border dark:text-text"
+          >
+            Cerrar
+          </button>
         </div>
-
         {questions.length === 0 && (
-          <div className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-text/60">
+          <div className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-text/60 dark:bg-surface dark:border-border dark:text-text/60">
             Sin preguntas en esta sesión.
           </div>
         )}
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {questions.map((q, i) => (
-            <div
-              key={q.id}
-              className="rounded-xl border border-border bg-gradient-to-br from-muted/40 to-muted/10 p-4"
-            >
-              <div className="mb-2 text-sm font-semibold">
-                #{i + 1} · {q.prompt}
+        <div className="space-y-6">
+          {questions.map((q, idx) => {
+            const answered = !!answers[q.id]?.text?.trim();
+            return (
+              <div
+                key={q.id}
+                className="rounded-xl border border-border bg-white/90 p-6 shadow-sm dark:bg-muted dark:border-border transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-8 w-8 flex items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-base dark:bg-primary/20 dark:text-primary">
+                    {idx + 1}
+                  </div>
+                  <h2 className="text-base font-semibold leading-snug flex-1 dark:text-text">{q.prompt}</h2>
+                </div>
+                <div className={answered ? "whitespace-pre-wrap text-[15px] text-text/90 dark:text-text" : "italic text-text/50 dark:text-text/50"}>
+                  {answered ? answers[q.id]!.text : "(Sin respuesta)"}
+                </div>
               </div>
-              <div className="min-h-[70px] whitespace-pre-wrap text-sm leading-relaxed">
-                {answers[q.id]?.text?.trim()
-                  ? answers[q.id].text
-                  : "(Sin respuesta)"}
-              </div>
-              <div className="mt-2 text-[10px] text-text/50">
-                ID pregunta: {q.id}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

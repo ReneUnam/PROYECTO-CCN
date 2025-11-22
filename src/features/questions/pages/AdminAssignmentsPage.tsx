@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useToast } from "@/components/toast/ToastProvider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createSurveyWithQuestionsAndAssign } from "../api/assignmentsApi";
@@ -15,6 +16,7 @@ function oneMonthFromNowLocal() {
 }
 
 export default function AdminAssignmentsPage() {
+    const toast = useToast();
   const [title, setTitle] = useState("");
   const init = oneMonthFromNowLocal();
   const [dueDate, setDueDate] = useState(init.date); // YYYY-MM-DD
@@ -30,7 +32,10 @@ export default function AdminAssignmentsPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const qs = questions.map((q) => q.trim()).filter(Boolean);
-    if (!title.trim() || !qs.length) return alert("Completa título y al menos una pregunta");
+    if (!title.trim() || !qs.length) {
+      toast.warning("Completa título y al menos una pregunta");
+      return;
+    }
     setLoading(true);
     try {
       const due = new Date(`${dueDate}T${dueTime}`);
@@ -40,11 +45,11 @@ export default function AdminAssignmentsPage() {
         questions: qs,
         audience,
       });
-      alert("Sesión creada y asignada");
+      toast.success("Sesión creada y asignada");
       setTitle("");
       setQuestions([""]);
     } catch (err: any) {
-      alert(err.message || "No se pudo crear la asignación");
+      toast.error(err.message || "No se pudo crear la asignación");
     } finally {
       setLoading(false);
     }

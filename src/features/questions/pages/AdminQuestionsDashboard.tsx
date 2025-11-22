@@ -157,6 +157,7 @@ export default function AdminQuestionsDashboard() {
 
   // Carga respuestas de asignación activa
   useEffect(() => {
+    setRows([]); // Limpiar filas al cambiar de asignación activa
     if (!active) return;
     setLoading(true);
     supabase
@@ -164,7 +165,7 @@ export default function AdminQuestionsDashboard() {
       .select("*")
       .eq("assignment_id", active)
       .then(({ data, error }) => {
-        if (!error) setRows((data || []) as Row[]);
+        setRows((data || []) as Row[]); // Siempre setear, aunque esté vacío
         setLoading(false);
       });
   }, [active]);
@@ -629,26 +630,33 @@ export default function AdminQuestionsDashboard() {
                             <th>Persona</th>
                             <th>Estado</th>
                             <th>Última</th>
-                            <th>Preg.</th>
+
                             <th></th>
                           </tr>
                         </thead>
                         <tbody>
                           {sessionsFiltered.map((s) => {
-                            const compl = s.status.toLowerCase() === "completed";
+                            const status = s.status?.toLowerCase();
                             return (
-                              <tr key={s.sessionId} className="border-t border-border">
-                                <td className="p-2">{s.sessionId.slice(0, 8)}</td>
+                              <tr key={s.sessionId} className="border-b border-border last:border-0">
+                                <td className="p-2 font-mono text-xs text-text/70">{s.sessionId.slice(0, 8)}</td>
                                 <td>{s.name}</td>
-                                <td className={compl ? "text-emerald-600 font-medium" : ""}>{s.status}</td>
-                                <td>{s.last?.slice(0, 16).replace("T", " ") || "—"}</td>
-                                <td>{s.items.length}</td>
+                                <td>
+                                  {status === "completed" ? (
+                                    <span className="text-emerald-600 font-medium">Completada</span>
+                                  ) : status === "in_progress" ? (
+                                    <span className="text-amber-600 font-medium">En progreso</span>
+                                  ) : (
+                                    <span className="text-text/60">{s.status}</span>
+                                  )}
+                                </td>
+                                <td className="text-xs text-text/60">{s.last ? s.last.slice(0, 16).replace("T", " ") : "—"}</td>
                                 <td>
                                   <button
+                                    className="flex w-full items-center justify-center gap-1 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
                                     onClick={() => openSession(s.sessionId)}
-                                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] hover:bg-muted"
                                   >
-                                    <Eye className="h-3.5 w-3.5" /> Ver
+                                    <Eye className="h-4 w-4" /> Ver
                                   </button>
                                 </td>
                               </tr>
