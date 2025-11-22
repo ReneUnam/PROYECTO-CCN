@@ -14,16 +14,25 @@ export interface UserProfile {
 export const useAuth = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastSessionId, setLastSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
     const loadFromSession = async (session: any) => {
+      // Solo recargar si la sesión realmente cambió
+      const sessionId = session?.user?.id || null;
+      if (sessionId === lastSessionId && user !== null) {
+        // No hacer nada si la sesión es la misma y ya hay usuario
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const authUser = session?.user ?? null;
         if (!authUser) {
           if (active) setUser(null);
+          setLastSessionId(null);
           return;
         }
 
@@ -58,6 +67,7 @@ export const useAuth = () => {
               ? { id: profile.id, full_name: name, role_id: (profile.role_id as RoleId) ?? 3, first_names: profile.first_names, last_names: profile.last_names, email }
               : { id: authUser.id, full_name: name, role_id: 3, email }
           );
+          setLastSessionId(sessionId);
         }
       } finally {
         if (active) setLoading(false);
@@ -71,14 +81,18 @@ export const useAuth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION') return;
-      loadFromSession(session);
+      // Solo recargar si la sesión realmente cambió
+      const sessionId = session?.user?.id || null;
+      if (sessionId !== lastSessionId) {
+        loadFromSession(session);
+      }
     });
 
     return () => {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [lastSessionId, user]);
 
   return { user, loading };
 };
