@@ -454,7 +454,7 @@ export default function AdminQuestionsDashboard() {
             <div className="flex items-center gap-2 rounded-lg border border-border bg-muted px-3">
               <Search className="h-4 w-4 text-text/50" />
               <input
-                placeholder="Buscar cuestionario o ID…"
+                placeholder="Buscar cuestionario"
                 value={draft.q}
                 onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
                 className="h-9 w-full bg-transparent text-sm outline-none"
@@ -464,10 +464,11 @@ export default function AdminQuestionsDashboard() {
               value={draft.status}
               onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Filters["status"] }))}
               className="h-9 rounded-lg border border-border bg-muted px-3 text-sm"
+              title="Filtra por estado de la asignación: 'En curso' muestra las que aún no han vencido, 'Vencidas' las que ya pasaron la fecha de vencimiento."
             >
               <option value="all">Todas</option>
-              <option value="open">Abiertas</option>
-              <option value="closed">Finalizadas</option>
+              <option value="open">En curso</option>
+              <option value="closed">Vencidas</option>
             </select>
             <DateField value={draft.from} onChange={(v: any) => setDraft((d) => ({ ...d, from: v }))} placeholder="Desde" />
             <DateField value={draft.to} onChange={(v: any) => setDraft((d) => ({ ...d, to: v }))} placeholder="Hasta" />
@@ -586,7 +587,16 @@ export default function AdminQuestionsDashboard() {
                     {/* Mobile tarjetas */}
                     <div className="space-y-3 md:hidden">
                       {sessionsFiltered.map((s) => {
-                        const completed = s.status?.toLowerCase() === "completed";
+                        const status = s.status?.toLowerCase();
+                        let statusLabel = s.status;
+                        let statusClass = "text-text/60";
+                        if (status === "completed") {
+                          statusLabel = "Completada";
+                          statusClass = "text-emerald-600 font-medium";
+                        } else if (status === "in_progress") {
+                          statusLabel = "En progreso";
+                          statusClass = "text-amber-600 font-medium";
+                        }
                         return (
                           <div key={s.sessionId} className="rounded-lg border border-border">
                             <div className="flex items-center justify-between border-b border-border px-3 py-2">
@@ -597,7 +607,7 @@ export default function AdminQuestionsDashboard() {
                               <div className="text-text/60">Persona</div>
                               <div className="truncate">{s.name}</div>
                               <div className="text-text/60">Estado</div>
-                              <div className={completed ? "text-emerald-600 font-medium" : ""}>{s.status}</div>
+                              <div className={statusClass}>{statusLabel}</div>
                               <div className="text-text/60">Última</div>
                               <div>{s.last?.slice(0, 16).replace("T", " ") || "—"}</div>
                               <div className="text-text/60">Preguntas</div>
