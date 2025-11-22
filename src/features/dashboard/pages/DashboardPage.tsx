@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { PendingAssignments } from "@/features/questions/components/PendingAssignments";
 import { useEffect, useState } from "react";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { supabase } from "@/core/api/supabaseClient";
 import { getMyStreakAll } from "@/features/journal/api/journalApi";
 import { getStreak } from "@/features/journal/api/journalApi";
@@ -46,49 +47,49 @@ const quickActions = [
 ];
 
 export function DashboardPage() {
-    const [streakEmo, setStreakEmo] = useState(0);
-  const [streakSelf, setStreakSelf] = useState(0);
-  const [streak, setStreak] = useState(0);
-  useEffect(() => { (async () => { const s = await getStreak("emotions"); setStreak(s.current_streak ?? 0); })(); }, []);
+
   const { user } = useAuth();
+  const [streakEmo, setStreakEmo] = useState<number | null>(null);
+  const [streakSelf, setStreakSelf] = useState<number | null>(null);
+  const [journalStreak, setJournalStreak] = useState<number | null>(null);
+  const [answeredToday, setAnsweredToday] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [a, b, streaks, answered] = await Promise.all([
+          getStreak("emotions"),
+          getStreak("self-care"),
+          getMyStreakAll().catch(() => []),
+          supabase.rpc("my_answered_questions_today"),
+        ]);
+        if (!mounted) return;
+        setStreakEmo(a.current_streak ?? 0);
+        setStreakSelf(b.current_streak ?? 0);
+        setJournalStreak(Math.max(0, ...streaks.map((s: any) => s.current_streak ?? 0)));
+        setAnsweredToday(!answered.error ? Number(answered.data) || 0 : 0);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   const roleId = user?.role_id ?? 3; // 1=admin,2=teacher,3=student
   const isAdmin = roleId === 1;
   const displayName = user?.full_name ?? 'Usuario';
   const visibleActions = quickActions.filter(a => isAdmin || !a.allowedRoleIds || a.allowedRoleIds.includes(roleId));
 
-  const [journalStreak, setJournalStreak] = useState<number>(0);
-  const [answeredToday, setAnsweredToday] = useState<number>(0);
-  useEffect(() => {
-    (async () => {
-      const [a, b] = await Promise.all([getStreak("emotions"), getStreak("self-care")]);
-      setStreakEmo(a.current_streak ?? 0);
-      setStreakSelf(b.current_streak ?? 0);
-    })();
-  }, []);
-    useEffect(() => {
-    (async () => {
-      const [a, b] = await Promise.all([getStreak("self-care"), getStreak("emotions")]);
-      setStreakSelf(a.current_streak ?? 0);
-      setStreakEmo(b.current_streak ?? 0);
-    })();
-  }, []);
-  useEffect(() => {
-    (async () => {
-      const streaks = await getMyStreakAll().catch(() => []);
-      const maxStreak = Math.max(0, ...streaks.map((s: any) => s.current_streak ?? 0));
-      setJournalStreak(maxStreak);
-
-      // Preguntas contestadas HOY por el usuario
-      const { data, error } = await supabase.rpc("my_answered_questions_today");
-      if (!error) setAnsweredToday(Number(data) || 0);
-    })();
-  }, []);
 
   const highlights = [
-    { id: "selfStreak", title: "Constancia del diario de autocuido", value: `${streakSelf} día${streakSelf === 1 ? "" : "s"}` },
-    { id: "emoStreak", title: "Constancia del diario emocional", value: `${streakEmo} día${streakEmo === 1 ? "" : "s"}` },
-    { id: "answers", title: "Preguntas contestadas hoy", value: String(answeredToday) },
+    { id: "selfStreak", title: "Constancia del diario de autocuido", value: streakSelf != null ? `${streakSelf} día${streakSelf === 1 ? "" : "s"}` : "-" },
+    { id: "emoStreak", title: "Constancia del diario emocional", value: streakEmo != null ? `${streakEmo} día${streakEmo === 1 ? "" : "s"}` : "-" },
+    { id: "answers", title: "Preguntas contestadas hoy", value: answeredToday != null ? String(answeredToday) : "-" },
   ];
+
+  if (loading || !user) return <FullScreenLoader />;
 
   return (
     <section className="mx-auto max-w-6xl space-y-10 text-text">
@@ -157,7 +158,7 @@ export function DashboardPage() {
       {/* ...existing code... */}
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <p className="text-sm">
-          Consejo del día: prioriza 10 minutos de respiración consciente.{" "}
+          Consejo del día: prioriza 10 minutos de respiración consciente.{' '}
           <span className="font-semibold text-brand-gold">Pequeños hábitos sostienen grandes cambios.</span>
         </p>
       </section>

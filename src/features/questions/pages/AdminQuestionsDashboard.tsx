@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { supabase } from "@/core/api/supabaseClient";
 import { DateField } from "@/core/components/DataField";
 import {
@@ -51,6 +52,7 @@ export default function AdminQuestionsDashboard() {
   const [active, setActive] = useState<number | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [filters, setFilters] = useState<Filters>({ q: "", status: "all", from: "", to: "" });
   const [draft, setDraft] = useState<Filters>(filters);
@@ -152,7 +154,11 @@ export default function AdminQuestionsDashboard() {
 
   // Carga overview
   useEffect(() => {
-    supabase.from("v_assignments_overview").select("*").then(({ data }) => setOverview(data || []));
+    setInitialLoading(true);
+    supabase.from("v_assignments_overview").select("*").then(({ data }) => {
+      setOverview(data || []);
+      setInitialLoading(false);
+    });
   }, []);
 
   // Carga respuestas de asignación activa
@@ -420,6 +426,8 @@ export default function AdminQuestionsDashboard() {
   }
 
   // Lista actual de estudiantes proviene del último fetch; se muestra tal cual
+
+  if (initialLoading) return <FullScreenLoader />;
 
   return (
     <div className="mx-auto max-w-7xl p-4 text-text">

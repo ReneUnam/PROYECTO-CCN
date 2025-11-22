@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { useToast } from "@/components/toast/ToastProvider";
 import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import { useNavigate } from "react-router-dom";
@@ -19,10 +20,15 @@ export function QuestionsPage() {
     const confirm = useConfirm();
   const [tab, setTab] = useState<Status>("new");
   const [data, setData] = useState<ApiAssignment[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getMyAssignments().then(setData).catch(() => setData([]));
+    setLoading(true);
+    getMyAssignments()
+      .then(setData)
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const items = useMemo<UiItem[]>(() => {
@@ -82,6 +88,8 @@ export function QuestionsPage() {
       toast.error(e.message || "No se pudo abrir la sesión");
     }
   };
+
+    if (loading) return <FullScreenLoader />;
 
     return (
     <section className="mx-auto max-w-6xl space-y-6 text-text px-4 sm:px-6">

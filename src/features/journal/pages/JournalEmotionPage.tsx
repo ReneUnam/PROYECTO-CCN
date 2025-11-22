@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { useToast } from "@/components/toast/ToastProvider";
 import { useNavigate } from "react-router-dom";
 import { startJournalEntry, getJournalHistory, getEntryAnswers, getTodayEntryStatus } from "@/features/journal/api/journalApi";
@@ -51,6 +52,8 @@ export default function JournalEmotionPage() {
 
     const showCTA = today?.status !== "completed";
     const ctaText = today?.status === "draft" ? "Continuar sesión" : "Comenzar sesión";
+
+    if (loading) return <FullScreenLoader />;
 
     return (
         <section className="mx-auto max-w-5xl px-3 text-text">

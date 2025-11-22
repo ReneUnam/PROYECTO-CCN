@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { useToast } from "@/components/toast/ToastProvider";
 import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import { Trash2, Play } from "lucide-react";
@@ -101,6 +102,7 @@ export function JournalTypePage({ type }: { type: "emotions" | "self-care" }) {
   const [drafts, setDrafts] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   async function onStart() {
     const entry = await startJournalEntry(type);
@@ -109,11 +111,13 @@ export function JournalTypePage({ type }: { type: "emotions" | "self-care" }) {
   }
 
   useEffect(() => {
+    setLoading(true);
     (async () => {
       const d = await getMyEntries(type, "draft").catch(() => []);
       const h = await getMyEntries(type, "completed").catch(() => []);
       setDrafts(d);
       setHistory(h);
+      setLoading(false);
     })();
   }, [type]);
 
@@ -164,6 +168,8 @@ export function JournalTypePage({ type }: { type: "emotions" | "self-care" }) {
       action: "Comenzar sesión",
     },
   }[type];
+
+  if (loading) return <FullScreenLoader />;
 
   return (
     <section className="mx-auto max-w-6xl space-y-6 text-text">
