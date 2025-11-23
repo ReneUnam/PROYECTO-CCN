@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { sendRiskAlert } from '../api/riskAlertApi';
 import { sendChat, listSessionMessagesServer } from '../api/chatApi';
 import type { ChatMessage } from '../api/chatApi';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -10,10 +11,8 @@ interface ChatWindowProps {
 import SessionSidebar from './SessionSidebar';
 
 export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente académico empático en español. Mantén tono calmado y validación emocional.' }: ChatWindowProps) {
-  const { user } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'system', content: initialSystemPrompt }
-  ]);
+  // ...existing code...
+  // ...existing code...
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -23,6 +22,103 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   const [scrollDistance, setScrollDistance] = useState(0); // distancia al fondo
   const SCROLL_THRESHOLD = 56; // px para considerar "cerca del final"
   const userInteractedRef = useRef(false); // registra interacción mientras se hace streaming
+
+  const riskKeywords = ['bullying', 'acoso', 'suicidio', 'miedo', 'tristeza', 'depresión', 'amenaza', 'golpe', 'insulto', 'abuso'];
+  const riskEmotions = ['tristeza', 'miedo', 'ira'];
+  const RISK_SCORE_THRESHOLD = 3;
+
+  function calculateRiskScore(messages: ChatMessage[]): number {
+    let score = 0;
+    messages.forEach(m => {
+      if (m.emotion && riskEmotions.includes(m.emotion.toLowerCase())) score++;
+      if (m.content) {
+        const contentLower = m.content.toLowerCase();
+        riskKeywords.forEach(keyword => {
+          if (contentLower.includes(keyword)) score++;
+        });
+      }
+    });
+    return score;
+  }
+
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'system', content: initialSystemPrompt }
+  ]);
+  // ...existing code...
+
+  // Mover la lógica de alerta al envío del mensaje de usuario
+  const lastAlertedMsgRef = useRef<string | null>(null);
+
+  async function handleSend() {
+    if (!input.trim() || streaming) return;
+    const nowIso = new Date().toISOString();
+    const newUserMsg: ChatMessage = { role: 'user', content: input.trim(), created_at: nowIso };
+    const nextHistory = [...messages, newUserMsg];
+
+    // --- ALERTA DE RIESGO SOLO AL ENVIAR MENSAJE DE USUARIO ---
+    if (user?.id && lastAlertedMsgRef.current !== newUserMsg.content) {
+      const riskScore = calculateRiskScore([newUserMsg]);
+      let hasKeyword = false;
+      let riskType: string = '';
+      for (const keyword of riskKeywords) {
+        if (newUserMsg.content && newUserMsg.content.toLowerCase().includes(keyword)) {
+          hasKeyword = true;
+          riskType = keyword;
+          break;
+        }
+      }
+      if ((riskScore >= RISK_SCORE_THRESHOLD || hasKeyword)) {
+        lastAlertedMsgRef.current = newUserMsg.content;
+        console.log('[ALERTA RIESGO] user.id que se envía:', user.id);
+        if (!riskType && typeof newUserMsg.emotion === 'string') {
+          riskType = newUserMsg.emotion || '';
+        }
+        sendRiskAlert({
+          userId: user.id,
+          score: riskScore,
+          riskType,
+          timestamp: nowIso
+        }).then(() => {
+          console.warn('[ALERTA RIESGO] Enviada al backend para el usuario:', user.id, 'Score:', riskScore, 'Tipo:', riskType);
+        }).catch(e => {
+          console.error('[ALERTA RIESGO] Error enviando alerta:', e.message);
+        });
+      }
+    }
+    // --- FIN ALERTA DE RIESGO ---
+
+    setMessages(nextHistory);
+    setInput('');
+    setStreaming(true);
+    // Insertamos placeholder del asistente y guardamos índice para actualizaciones directas
+    const assistantIndex = nextHistory.length; // posición donde irá el asistente
+    setMessages(curr => [...curr, { role: 'assistant', content: '', created_at: nowIso }]);
+    let assistantContent = '';
+    try {
+      if (!user?.id) {
+        setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: 'No hay user.id disponible.' } : m));
+        setStreaming(false);
+        return;
+      }
+      const result = await sendChat({ sessionId, messages: nextHistory, userId: user.id }, (token) => {
+        assistantContent += token;
+        // Actualizamos sólo el índice del asistente
+        setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: assistantContent } : m));
+      });
+      const newSessionId = result.sessionId || sessionId;
+      setSessionId(newSessionId);
+      if (newSessionId && newSessionId !== localStorage.getItem('chat_session_id')) {
+        localStorage.setItem('chat_session_id', newSessionId);
+        console.log('[chat] sessionId creado y guardado', newSessionId);
+      }
+      setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: assistantContent, emotion: result.emotion || null } : m));
+    } catch (e: any) {
+      setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: e.message || 'Error procesando respuesta.' } : m));
+    } finally {
+      setStreaming(false);
+    }
+  }
 
   // Auto-scroll sólo si el usuario estaba ya al fondo antes de este render
   useLayoutEffect(() => {
@@ -149,42 +245,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
     return () => { cancelled = true; };
   }, [sessionId, user?.id, messages.length]);
 
-  async function handleSend() {
-    if (!input.trim() || streaming) return;
-    const nowIso = new Date().toISOString();
-    const newUserMsg: ChatMessage = { role: 'user', content: input.trim(), created_at: nowIso };
-    const nextHistory = [...messages, newUserMsg];
-    setMessages(nextHistory);
-    setInput('');
-    setStreaming(true);
-    // Insertamos placeholder del asistente y guardamos índice para actualizaciones directas
-    const assistantIndex = nextHistory.length; // posición donde irá el asistente
-    setMessages(curr => [...curr, { role: 'assistant', content: '', created_at: nowIso }]);
-    let assistantContent = '';
-    try {
-      if (!user?.id) {
-        setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: 'No hay user.id disponible.' } : m));
-        setStreaming(false);
-        return;
-      }
-      const result = await sendChat({ sessionId, messages: nextHistory, userId: user.id }, (token) => {
-        assistantContent += token;
-        // Actualizamos sólo el índice del asistente
-        setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: assistantContent } : m));
-      });
-      const newSessionId = result.sessionId || sessionId;
-      setSessionId(newSessionId);
-      if (newSessionId && newSessionId !== localStorage.getItem('chat_session_id')) {
-        localStorage.setItem('chat_session_id', newSessionId);
-        console.log('[chat] sessionId creado y guardado', newSessionId);
-      }
-      setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: assistantContent, emotion: result.emotion || null } : m));
-    } catch (e: any) {
-      setMessages(curr => curr.map((m, i) => i === assistantIndex ? { ...m, content: e.message || 'Error procesando respuesta.' } : m));
-    } finally {
-      setStreaming(false);
-    }
-  }
+  // ...eliminada función duplicada handleSend...
 
   // Nueva conversación: borra sessionId y reinicia mensajes
   function startNewSession() {

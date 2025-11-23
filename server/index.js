@@ -6,10 +6,16 @@ import { streamLLM } from './llm.js';
 import { classifyEmotion } from './classify.js';
 import { maybeCompactSession } from './summary.js';
 import { checkModeration, crisisSafeResponse } from './moderation.js';
+import alertsRouter from './alerts.js';
+import usernamesRouter from './usernames.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Rutas de alertas
+app.use(alertsRouter);
+app.use(usernamesRouter);
 
 // SSE helper
 function initSSE(res) {

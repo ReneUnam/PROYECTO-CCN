@@ -52,6 +52,7 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Estadísticas", path: "/stats", icon: BarChart3 },
     { label: "Notificaciones", path: "/notifications", icon: Bell },
     { label: "Configuración", path: "/settings", icon: Settings },
+    { label: "Alertas de riesgo", path: "/admin/alerts", icon: ShieldCheck, allowedRoleIds: [1] },
   ];
 
   const { user } = useAuth();
@@ -142,6 +143,21 @@ export function Sidebar({ open }: SidebarProps) {
                           <span>Buzón</span>
                         </NavLink>
                       </li>
+                    <li>
+                      <NavLink
+                        to="/admin/alerts"
+                        className={({ isActive }) =>
+                          [
+                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                            "hover:bg-primary/10",
+                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                          ].join(" ")
+                        }
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                        <span>Alertas de riesgo</span>
+                      </NavLink>
+                    </li>
                       <li>
                         <NavLink
                           to="/admin/questions/dashboard"

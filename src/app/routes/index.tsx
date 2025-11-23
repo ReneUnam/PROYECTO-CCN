@@ -21,6 +21,7 @@ import { JournalAdminPage } from "@/features/journal/pages/JournalAdminPage";
 import MailboxPage from "@/features/mailbox/pages/MailboxPage";
 import AdminMailboxPage from "@/features/mailbox/pages/AdminMailboxPage";
 import ChatWindow from "@/features/chatbot/components/ChatWindow";
+import AdminPanel from '@/features/admin';
 
 const router = createBrowserRouter([
   
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
               { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
               { path: "/admin/journal", element: <JournalAdminPage /> },
               { path: "/admin/mailbox", element: <AdminMailboxPage /> },
+              { path: "/admin/alerts", element: <AdminPanel /> },
             ],
           },
         ],
