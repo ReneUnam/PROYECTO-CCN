@@ -18,11 +18,10 @@ export async function streamLLM(messages, onToken) {
     prompt,
     stream: true,
     options: {
-      temperature: 0.7,
+      temperature: 0.3, // Directo
       num_ctx: 2048,
-      // Aumentamos límite de predicción para evitar respuestas cortas
-      num_predict: 256,
-      top_p: 0.95
+      num_predict: 384, // Más largo para evitar cortes
+      top_p: 0.9 // Menos divagación
     }
   };
 

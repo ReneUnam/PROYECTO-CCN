@@ -23,7 +23,18 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   const SCROLL_THRESHOLD = 56; // px para considerar "cerca del final"
   const userInteractedRef = useRef(false); // registra interacción mientras se hace streaming
 
-  const riskKeywords = ['bullying', 'acoso', 'suicidio', 'miedo', 'tristeza', 'depresión', 'amenaza', 'golpe', 'insulto', 'abuso'];
+  const riskKeywords = [
+    'bullying', 'acoso', 'acosando', 'acosa', 'acosar',
+    'suicidio', 'suicida', 'suicidarse',
+    'miedo', 'miedoso', 'temor',
+    'tristeza', 'triste', 'depresión', 'depresivo', 'deprimido',
+    'amenaza', 'amenazando', 'amenazar',
+    'golpe', 'golpeando', 'golpear', 'golpeado',
+    'insulto', 'insultando', 'insultar', 'insultado',
+    'abuso', 'abusando', 'abusar', 'abusado',
+    'matar', 'matando', 'matarse', 'asesinar', 'asesinato',
+    'aborto', 'abortando', 'abortar', 'abortado'
+  ];
   const riskEmotions = ['tristeza', 'miedo', 'ira'];
   const RISK_SCORE_THRESHOLD = 3;
 
