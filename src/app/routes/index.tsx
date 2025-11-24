@@ -24,6 +24,8 @@ import AdminMailboxPage from "@/features/mailbox/pages/AdminMailboxPage";
 import { AdminJournalMonitorPage } from "@/features/journal/AdminJournalMonitorPage";
 import AdminUsersPage from "@/features/users/pages/AdminUsersPage";
 import AdminUserDetailPage from "@/features/users/pages/AdminUserDetailPage";
+import ChatWindow from "@/features/chatbot/components/ChatWindow";
+import AdminPanel from '@/features/admin';
 
 const router = createBrowserRouter([
   
@@ -53,6 +55,7 @@ const router = createBrowserRouter([
           { path: "/journal/emotions", element: <JournalEmotionPage /> },
           { path: "/journal/self-care", element: <JournalSelfCarePage /> },
           { path: "/forum", element: <MailboxPage /> },
+          { path: "/chatbot", element: <ChatWindow /> },
 
           // Solo administradores
           {
@@ -66,7 +69,7 @@ const router = createBrowserRouter([
               { path: "/admin/journal", element: <JournalAdminPage /> },
               { path: "/admin/mailbox", element: <AdminMailboxPage /> },
               { path: "/admin/journal/monitor", element: <AdminJournalMonitorPage /> },
-            
+              { path: "/admin/alerts", element: <AdminPanel /> },
             ],
           },
         ],

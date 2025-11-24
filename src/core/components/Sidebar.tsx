@@ -129,7 +129,68 @@ export function Sidebar({ open }: SidebarProps) {
                 </button>
                 {adminMenuOpen && (
                   <ul className="mt-1 space-y-1 pl-6 text-sm">
-                    {/* Buzón (admin) */}
+                      {/* Buzón (admin) */}
+                      <li>
+                        <NavLink
+                          to="/admin/mailbox"
+                          className={({ isActive }) =>
+                            [
+                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                              "hover:bg-primary/10",
+                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ")
+                          }
+                        >
+                          <Inbox className="h-4 w-4" />
+                          <span>Buzón</span>
+                        </NavLink>
+                      </li>
+                    <li>
+                      <NavLink
+                        to="/admin/alerts"
+                        className={({ isActive }) =>
+                          [
+                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                            "hover:bg-primary/10",
+                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                          ].join(" ")
+                        }
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                        <span>Alertas de riesgo</span>
+                      </NavLink>
+                    </li>
+                      <li>
+                        <NavLink
+                          to="/admin/questions/dashboard"
+                          className={({ isActive }) =>
+                            [
+                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                              "hover:bg-primary/10",
+                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ")
+                          }
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                          <span>Resultados de preguntas</span>
+                        </NavLink>
+                      </li>
+                      {/* Sesiones de preguntas (envuelto en <li>) */}
+                      <li>
+                        <NavLink
+                          to="/admin/assignments/manage"
+                          className={({ isActive }) =>
+                            [
+                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                              "hover:bg-primary/10",
+                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ")
+                          }
+                        >
+                          <ListChecks className="h-4 w-4" />
+                          <span>Sesiones de preguntas</span>
+                        </NavLink>
+                      </li>
                     <li>
                       <NavLink
                         to="/admin/mailbox"
