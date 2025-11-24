@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useState, type ComponentType } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
@@ -55,6 +55,7 @@ export function Sidebar({ open }: SidebarProps) {
 
 
   const { user } = useAuth();
+  const location = useLocation();
 
   const roleId = user?.role_id ?? 3;
   const isAdmin = roleId === 1;
@@ -210,13 +211,14 @@ export function Sidebar({ open }: SidebarProps) {
                       <li>
                         <NavLink
                           to="/admin/users"
-                          className={({ isActive }) =>
-                            [
+                          className={({ isActive }) => {
+                            const active = isActive || location.pathname === '/register';
+                            return [
                               "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
                               "hover:bg-primary/10",
-                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                            ].join(" ")
-                          }
+                              active ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ");
+                          }}
                         >
                           <User className="h-4 w-4" />
                           <span>Usuarios</span>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/toast/ToastProvider';
 import { adminListSuggestions, deleteSuggestion } from '../api/mailboxApi';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 
 type Row = {
   id: string;
@@ -32,7 +33,7 @@ export default function AdminMailboxPage() {
     })();
   }, []);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <FullScreenLoader />;
 
   return (
     <section className="mx-auto max-w-6xl p-6 space-y-6">

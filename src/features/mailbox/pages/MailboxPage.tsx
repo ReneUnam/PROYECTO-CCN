@@ -3,6 +3,7 @@ import { useToast } from '@/components/toast/ToastProvider';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { createSuggestion, listMySuggestions } from '../api/mailboxApi';
 
 type SuggestionRow = {
@@ -22,6 +23,7 @@ export default function MailboxPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [rows, setRows] = useState<SuggestionRow[]>([]);
+  const [rowsLoading, setRowsLoading] = useState(true);
   const roleId = user?.role_id ?? 3;
 
   // Lista fija de categorías disponibles
@@ -38,19 +40,21 @@ export default function MailboxPage() {
   // Se eliminó el apartado de imágenes/adjuntos
 
   async function refresh() {
+    setRowsLoading(true);
     try {
       const data = await listMySuggestions();
       setRows(data as any);
     } catch (_) {
       setRows([]);
+    } finally {
+      setRowsLoading(false);
     }
   }
 
   useEffect(() => {
     refresh();
   }, []);
-
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading || rowsLoading) return <FullScreenLoader />;
 
   const canSend = user && (roleId === 2 || roleId === 3);
 

@@ -104,6 +104,15 @@ export default function RegisterPage() {
       <Card className={`mt-6 w-full max-w-2xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform ${saved ? 'scale-105 shadow-lg' : ''}`}>
         <CardContent className="p-6 sm:p-8">
           <div className="mx-auto w-full">
+            <div className="mb-4">
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="inline-flex items-center gap-2 text-sm text-[color:var(--color-primary)] hover:underline"
+                type="button"
+              >
+                ← Volver a usuarios
+              </button>
+            </div>
             <h1 className="mb-4 text-center text-2xl font-semibold text-[color:var(--color-text)]">Crear usuario</h1>
 
             <div className="space-y-4 text-[color:var(--color-text)]">

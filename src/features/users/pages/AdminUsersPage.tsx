@@ -299,19 +299,20 @@ export default function AdminUsersPage() {
 
         {/* Deactivate / Reactivate confirmation modal */}
         {showModal && modalUser && (
-          <div className="fixed inset-0 grid place-items-center bg-black/40" style={{ zIndex: 2147483646 }}>
-            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg relative" style={{ zIndex: 2147483647 }}>
-              <h3 className="text-lg font-semibold mb-2">{modalUser.is_disabled ? "Reactivar usuario" : "Dar de baja usuario"}</h3>
-              <p className="text-sm text-text/70 mb-4">¿Deseas {modalUser.is_disabled ? "reactivar" : "dar de baja"} a <strong>{`${modalUser.first_names ?? ""} ${modalUser.last_names ?? ""}`}</strong>? Esta acción puede revertirse.</p>
-              {deactivateError && <div className="text-sm text-red-600 mb-2">{deactivateError}</div>}
-              <div className="flex items-center gap-2">
-                <button onClick={() => { handleToggleActive(); }} disabled={deactivationLoading} className="rounded-md bg-primary px-3 py-2 text-white">{deactivationLoading ? "Procesando..." : (modalUser.is_disabled ? "Reactivar" : "Dar de baja")}</button>
-                <button onClick={() => { setShowModal(false); setModalUser(null); setDeactivateError(undefined); }} className="rounded-md border px-3 py-2">Cancelar</button>
+          <>
+            <div className="fixed inset-0 grid place-items-center bg-black/40" style={{ zIndex: 2147483646 }}>
+              <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg relative" style={{ zIndex: 2147483647 }}>
+                <h3 className="text-lg font-semibold mb-2">{modalUser.is_disabled ? "Reactivar usuario" : "Dar de baja usuario"}</h3>
+                <p className="text-sm text-text/70 mb-4">¿Deseas {modalUser.is_disabled ? "reactivar" : "dar de baja"} a <strong>{`${modalUser.first_names ?? ""} ${modalUser.last_names ?? ""}`}</strong>? Esta acción puede revertirse.</p>
+                {deactivateError && <div className="text-sm text-red-600 mb-2">{deactivateError}</div>}
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { handleToggleActive(); }} disabled={deactivationLoading} className="rounded-md bg-primary px-3 py-2 text-white">{deactivationLoading ? "Procesando..." : (modalUser.is_disabled ? "Reactivar" : "Dar de baja")}</button>
+                  <button onClick={() => { setShowModal(false); setModalUser(null); setDeactivateError(undefined); }} className="rounded-md border px-3 py-2">Cancelar</button>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
-
       <div className="relative rounded-xl border border-border bg-surface p-4">
         {users.length === 0 ? (
           <div className="py-8 text-center text-sm text-text/60">No se encontraron usuarios.</div>
@@ -327,7 +328,7 @@ export default function AdminUsersPage() {
                     <th className="p-2 hidden md:table-cell">Rol</th>
                     <th className="p-2 hidden lg:table-cell">Institución</th>
                     <th className="p-2 hidden lg:table-cell">Creado</th>
-                    <th className="p-2">Estado <span title="Activo = usuario con cuenta de inicio de sesión. Inactivo = sin cuenta vinculada." className="ml-2 text-xs text-text/60">ℹ</span></th>
+                    <th className="p-2">Estado <span title="Activo = usuario con cuenta de inicio de sesión. Inactivo = sin cuenta vinculada." className="ml-2 text-xs text-text/60"></span></th>
                   </tr>
                 </thead>
                 <tbody>
