@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useUsernames } from './useUsernames';
+import { supabase } from '@/core/api/supabaseClient';
 
 type Alert = {
   user_id: string;
@@ -32,8 +32,25 @@ export default function AdminAlertsPanel() {
   }, []);
 
   // Obtener los IDs únicos de usuario de las alertas
-  const userIds = Array.from(new Set(alerts.map(a => a.user_id)));
-  const usernames = useUsernames(userIds);
+
+  const [usernames, setUsernames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const ids = Array.from(new Set(alerts.map(a => a.user_id)));
+    if (!ids.length) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, first_names, last_names, email')
+        .in('id', ids);
+      const map: Record<string, string> = {};
+      for (const p of data || []) {
+        const fn = (p.first_names || '').trim();
+        const ln = (p.last_names || '').trim();
+        map[p.id] = [fn, ln].filter(Boolean).join(' ') || p.email || 'Sin nombre';
+      }
+      setUsernames(map);
+    })();
+  }, [alerts]);
 
   return (
     <section className="mx-auto max-w-3xl space-y-8 text-text">

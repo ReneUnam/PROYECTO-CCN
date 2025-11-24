@@ -52,7 +52,6 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Estadísticas", path: "/stats", icon: BarChart3 },
     { label: "Notificaciones", path: "/notifications", icon: Bell },
     { label: "Configuración", path: "/settings", icon: Settings },
-    { label: "Alertas de riesgo", path: "/admin/alerts", icon: ShieldCheck, allowedRoleIds: [1] },
   ];
 
   const { user } = useAuth();

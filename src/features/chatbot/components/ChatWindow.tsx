@@ -10,7 +10,7 @@ interface ChatWindowProps {
 
 import SessionSidebar from './SessionSidebar';
 
-export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente académico empático en español. Mantén tono calmado y validación emocional.' }: ChatWindowProps) {
+export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente académico empático en español. Mantén tono calmado y validación emocional. Responde siempre en español, nunca en inglés, aunque el usuario escriba en otro idioma. Si el usuario pide recomendaciones de asociaciones, instituciones o ayuda, responde solo con opciones de Nicaragua.' }: ChatWindowProps) {
   // ...existing code...
   // ...existing code...
   const [input, setInput] = useState('');
@@ -33,7 +33,13 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
     'insulto', 'insultando', 'insultar', 'insultado',
     'abuso', 'abusando', 'abusar', 'abusado',
     'matar', 'matando', 'matarse', 'asesinar', 'asesinato',
-    'aborto', 'abortando', 'abortar', 'abortado'
+    'aborto', 'abortando', 'abortar', 'abortado',
+    'drogas', 'alcohol', 'cocaina', 'marihuana', 
+    'cigarros', 'tabaco', 'anfetaminas', 'opioides',
+    'heroína', 'lsd', 'éxtasis', 'metanfetamina',
+    'crack', 'inhalantes', 'alucinógenos',
+    'sustancias', 'solventes', 'pastillas',
+    'psicotrópicos', 'barbitúricos', 'benzodiacepinas'
   ];
   const riskEmotions = ['tristeza', 'miedo', 'ira'];
   const RISK_SCORE_THRESHOLD = 3;

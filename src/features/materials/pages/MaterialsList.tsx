@@ -80,7 +80,7 @@ export default function MaterialsList() {
   return (
     <section className="mx-auto max-w-6xl p-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Recursos pedagógicos</h1>
+        <h1 className="text-2xl font-bold">Materiales psicopedagógicos</h1>
         {canManage && (
           <Button className="rounded-full bg-indigo-700 px-4 py-2 text-white" onClick={() => setAddOpen(true)}>
             Agregar material
