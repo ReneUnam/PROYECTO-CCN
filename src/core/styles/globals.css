@@ -47,9 +47,11 @@
   --color-secondary: #2fb866;
   --color-tertiary: #2647a5;
   --color-muted: #f4f4f4;
+  --color-placeholder: #9ca3af;
   --color-surface: #ffffff;
   --color-text: #0f172a;
   --color-border: #e5e7eb;
+  --color-hover: rgba(15,23,42,0.03);
 }
 
 html.dark {
@@ -57,13 +59,15 @@ html.dark {
   --bg-end: #0b1220;
 
   --color-primary: #1b2b6e;
-  --color-secondary: #4d1c9d;
+  --color-secondary: #34d399; /* more visible green in dark mode */
   --color-tertiary: #3552c5;
 
   --color-muted: #0b1220;
+  --color-placeholder: #94a3b8;
   --color-surface: #0f172a;
   --color-text: #e5e7eb;
   --color-border: #1f2937;
+  --color-hover: rgba(229,231,235,0.02);
 }
 
 body {

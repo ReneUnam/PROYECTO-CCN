@@ -246,40 +246,40 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full min-w-0">
           <div className="flex items-center gap-3">
             {typeof totalUsersCount === 'number' && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-medium text-text shadow-sm border border-border">
-                <span className="text-xs text-text/60">Total</span>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface)] px-3 py-1 text-sm font-medium text-[color:var(--color-text)] shadow-sm border border-[var(--color-border)]">
+                <span className="text-xs text-[color:var(--color-text)]/60">Total</span>
                 <span className="font-semibold">{totalUsersCount}</span>
               </div>
             )}
             {typeof activatedUsersCount === 'number' && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-                <span className="text-xs text-green-700/80">Activos</span>
-                <span className="font-semibold text-green-700">{activatedUsersCount}</span>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface)] px-3 py-1 text-sm font-medium text-[color:var(--color-secondary)] border border-[var(--color-border)]">
+                <span className="text-xs text-[color:var(--color-secondary)]">Activos</span>
+                <span className="font-semibold text-[color:var(--color-secondary)]">{activatedUsersCount}</span>
               </div>
             )}
             {typeof notActivatedCount === 'number' && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
-                <span className="text-xs text-red-700/80">Inactivos</span>
-                <span className="font-semibold text-red-700">{notActivatedCount}</span>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface)] px-3 py-1 text-sm font-medium text-[color:var(--color-tertiary)] border border-[var(--color-border)]">
+                <span className="text-xs text-[color:var(--color-tertiary)]">Inactivos</span>
+                <span className="font-semibold text-[color:var(--color-tertiary)]">{notActivatedCount}</span>
               </div>
             )}
             {typeof disabledCount === 'number' && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
-                <span className="text-xs text-gray-600">Baja</span>
-                <span className="font-semibold text-gray-700">{disabledCount}</span>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface)] px-3 py-1 text-sm font-medium text-[color:var(--color-text)] border border-[var(--color-border)]">
+                <span className="text-xs text-[color:var(--color-text)]/60">Baja</span>
+                <span className="font-semibold text-[color:var(--color-text)]">{disabledCount}</span>
               </div>
             )}
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="bg-white rounded-lg px-3 py-2 flex items-center gap-2 w-full max-w-3xl shadow-sm border border-border min-w-0">
-              <select value={roleFilter ?? ''} onChange={(e) => { setPage(1); setRoleFilter(e.target.value ? Number(e.target.value) : null); }} className="hidden sm:inline-block rounded-md border border-border bg-white px-3 py-2 text-sm">
+            <div className="bg-[color:var(--color-surface)] rounded-lg px-3 py-2 flex items-center gap-2 w-full max-w-3xl shadow-sm border border-[var(--color-border)] min-w-0">
+              <select value={roleFilter ?? ''} onChange={(e) => { setPage(1); setRoleFilter(e.target.value ? Number(e.target.value) : null); }} className="hidden sm:inline-block rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)]">
                 <option value="">Todos</option>
                 <option value="3">Estudiantes</option>
                 <option value="2">Docentes</option>
                 <option value="1">Admins</option>
               </select>
 
-              <select value={activationFilter} onChange={(e) => { setPage(1); setActivationFilter(e.target.value as any); }} className="hidden sm:inline-block rounded-md border border-border bg-white px-3 py-2 text-sm">
+              <select value={activationFilter} onChange={(e) => { setPage(1); setActivationFilter(e.target.value as any); }} className="hidden sm:inline-block rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)]">
                 <option value="all">Todos</option>
                 <option value="activated">Activos</option>
                 <option value="not_activated">Inactivos</option>
@@ -289,7 +289,7 @@ export default function AdminUsersPage() {
                 value={rawQuery}
                 onChange={(e) => { setPage(1); setRawQuery(e.target.value); }}
                 placeholder="Buscar por nombre, correo o ID institucional..."
-                className="flex-1 min-w-0 w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+                className="flex-1 min-w-0 w-full rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)] placeholder:text-[color:var(--color-placeholder)]"
               />
             </div>
           </div>
@@ -301,13 +301,13 @@ export default function AdminUsersPage() {
         {showModal && modalUser && (
           <>
             <div className="fixed inset-0 grid place-items-center bg-black/40" style={{ zIndex: 2147483646 }}>
-              <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg relative" style={{ zIndex: 2147483647 }}>
+              <div className="w-full max-w-md rounded-lg bg-[color:var(--color-surface)] p-6 shadow-lg relative border border-[var(--color-border)]" style={{ zIndex: 2147483647 }}>
                 <h3 className="text-lg font-semibold mb-2">{modalUser.is_disabled ? "Reactivar usuario" : "Dar de baja usuario"}</h3>
                 <p className="text-sm text-text/70 mb-4">¿Deseas {modalUser.is_disabled ? "reactivar" : "dar de baja"} a <strong>{`${modalUser.first_names ?? ""} ${modalUser.last_names ?? ""}`}</strong>? Esta acción puede revertirse.</p>
                 {deactivateError && <div className="text-sm text-red-600 mb-2">{deactivateError}</div>}
                 <div className="flex items-center gap-2">
                   <button onClick={() => { handleToggleActive(); }} disabled={deactivationLoading} className="rounded-md bg-primary px-3 py-2 text-white">{deactivationLoading ? "Procesando..." : (modalUser.is_disabled ? "Reactivar" : "Dar de baja")}</button>
-                  <button onClick={() => { setShowModal(false); setModalUser(null); setDeactivateError(undefined); }} className="rounded-md border px-3 py-2">Cancelar</button>
+                  <button onClick={() => { setShowModal(false); setModalUser(null); setDeactivateError(undefined); }} className="rounded-md border border-[var(--color-border)] px-3 py-2 text-[color:var(--color-text)]">Cancelar</button>
                 </div>
               </div>
             </div>
@@ -326,14 +326,21 @@ export default function AdminUsersPage() {
                     <th className="p-2">Usuario</th>
                     {/* Correo column removed (emails shown under name) */}
                     <th className="p-2 hidden md:table-cell">Rol</th>
-                    <th className="p-2 hidden lg:table-cell">Institución</th>
+                    <th className="p-2 hidden lg:table-cell">Id institucional</th>
                     <th className="p-2 hidden lg:table-cell">Creado</th>
                     <th className="p-2">Estado <span title="Activo = usuario con cuenta de inicio de sesión. Inactivo = sin cuenta vinculada." className="ml-2 text-xs text-text/60"></span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u) => (
-                    <tr key={u.id} className="border-t border-border hover:bg-muted transition-colors">
+                    <tr
+                      key={u.id}
+                      onClick={() => navigate(`/admin/users/${u.id}`)}
+                      className="border-t border-[var(--color-border)] hover:bg-[color:var(--color-hover)] transition-colors cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/admin/users/${u.id}`); }}
+                    >
                       <td className="p-2">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -355,16 +362,16 @@ export default function AdminUsersPage() {
                       <td className="p-2 hidden lg:table-cell">{u.created_at ? new Date(u.created_at).toLocaleString() : "—"}</td>
                       <td className="p-2">
                         {u.auth_user_id ? (
-                          <span title="Usuario con cuenta de autenticación vinculada" className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700">Activo</span>
+                          <span title="Usuario con cuenta de autenticación vinculada" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-secondary)]">Activo</span>
                         ) : (
-                          <span title="Usuario sin cuenta de autenticación" className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700">Inactivo</span>
+                          <span title="Usuario sin cuenta de autenticación" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-tertiary)]">Inactivo</span>
                         )}
                       </td>
                       <td className="p-2 text-right">
                         {u.id !== currentAuthUserId && (
                           <button
-                            onClick={() => { setModalUser(u); setShowModal(true); setDeactivateError(undefined); }}
-                            className={`rounded-md px-3 py-1 text-sm ${u.is_disabled ? 'bg-green-50 text-green-700 hover:bg-green-60' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                            onClick={(e) => { e.stopPropagation(); setModalUser(u); setShowModal(true); setDeactivateError(undefined); }}
+                            className={`rounded-md px-3 py-1 text-sm ${u.is_disabled ? 'bg-[color:var(--color-surface)] text-[color:var(--color-secondary)] border border-[var(--color-border)] hover:bg-[color:var(--color-hover)]' : 'bg-red-600 text-white hover:bg-red-700'}`}
                           >
                             {u.is_disabled ? 'Reactivar' : 'Dar de baja'}
                           </button>
@@ -379,7 +386,14 @@ export default function AdminUsersPage() {
             {/* Mobile list */}
             <div className="block sm:hidden space-y-3">
               {users.map((u) => (
-                <div key={u.id} className="rounded-lg border border-border bg-white p-4 shadow-sm">
+                <div
+                  key={u.id}
+                  onClick={() => navigate(`/admin/users/${u.id}`)}
+                  className="rounded-lg border border-[var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-sm cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/admin/users/${u.id}`); }}
+                >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
                       {u.avatar_url ? (
@@ -388,24 +402,24 @@ export default function AdminUsersPage() {
                         <AvatarFallback>{(u.first_names ?? "")[0] || (u.last_names ?? "")[0] || "U"}</AvatarFallback>
                       )}
                     </Avatar>
-                    <div className="flex-1">
+                      <div className="flex-1 text-[color:var(--color-text)]">
                         <div className="flex items-center justify-between">
                         <div className="font-medium">{`${u.first_names ?? ""} ${u.last_names ?? ""}`.trim() || "—"}</div>
                         <div>
                           {u.auth_user_id ? (
-                                <span title="Usuario con cuenta de autenticación vinculada" className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700">Activo</span>
+                                <span title="Usuario con cuenta de autenticación vinculada" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-secondary)]">Activo</span>
                               ) : (
-                                <span title="Usuario sin cuenta de autenticación" className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700">Inactivo</span>
+                                <span title="Usuario sin cuenta de autenticación" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-tertiary)]">Inactivo</span>
                               )}
                         </div>
                       </div>
-                      <div className="text-xs text-text/60">{u.email ?? u.id}</div>
+                      <div className="text-xs text-[color:var(--color-text)]/60">{u.email ?? u.id}</div>
                       <div className="mt-2 flex items-center gap-3 text-xs text-text/60">
                         <div>{u.role_id === 1 ? "Admin" : u.role_id === 2 ? "Teacher" : "Student"}</div>
                         <div className="truncate">{u.institution_id ?? "—"}</div>
                       </div>
                       <div className="mt-2 flex justify-end">
-                        <button onClick={() => { setModalUser(u); setShowModal(true); setDeactivateError(undefined); }} className="rounded-md bg-secondary/10 px-3 py-1 text-sm text-secondary">{u.is_disabled ? 'Reactivar' : 'Dar de baja'}</button>
+                        <button onClick={(e) => { e.stopPropagation(); setModalUser(u); setShowModal(true); setDeactivateError(undefined); }} className="rounded-md px-3 py-1 text-sm bg-[color:var(--color-surface)] border border-[var(--color-border)] text-[color:var(--color-secondary)] hover:bg-[color:var(--color-hover)]">{u.is_disabled ? 'Reactivar' : 'Dar de baja'}</button>
                       </div>
                     </div>
                   </div>

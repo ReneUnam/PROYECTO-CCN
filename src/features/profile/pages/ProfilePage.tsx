@@ -223,7 +223,7 @@ export function ProfilePage() {
                 </div>
                 <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6 w-full max-w-xs mx-auto">
                     <button
-                        className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-base font-medium border border-border transition"
+                        className="px-4 py-2 rounded-lg bg-[color:var(--color-surface)] border border-[var(--color-border)] text-base font-medium text-[color:var(--color-text)] hover:bg-[color:var(--color-hover)] transition"
                         onClick={() => { setCropModalOpen(false); setPreviewUrl(null); setRawFile(null); }}
                     >Cancelar</button>
                     <button
@@ -234,14 +234,14 @@ export function ProfilePage() {
                 </div>
             </Modal>
             {/* Modal de confirmación para borrar foto */}
-            {confirmDeleteOpen && ReactDOM.createPortal(
+                {confirmDeleteOpen && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-lg p-6 max-w-xs w-full flex flex-col items-center">
+                    <div className="bg-[color:var(--color-surface)] rounded-xl shadow-lg p-6 max-w-xs w-full flex flex-col items-center border border-[var(--color-border)]">
                         <Trash2 className="h-10 w-10 text-red-500 mb-2" />
                         <div className="text-center mb-4">¿Seguro que quieres eliminar tu foto de perfil?</div>
                         <div className="flex gap-3 w-full justify-center">
-                            <button className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center" onClick={() => setConfirmDeleteOpen(false)}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6 text-gray-500">
+                            <button className="w-10 h-10 rounded-full bg-[color:var(--color-surface)] border border-[var(--color-border)] hover:bg-[color:var(--color-hover)] flex items-center justify-center" onClick={() => setConfirmDeleteOpen(false)}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6 text-[color:var(--color-text)]">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
@@ -264,13 +264,13 @@ export function ProfilePage() {
                                 </Avatar>
                                 {/* Menú de tres puntitos */}
                                 <button
-                                    className="absolute top-2 right-2 sm:top-3 sm:-right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md border border-border hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                                    className="absolute top-2 right-2 sm:top-3 sm:-right-4 bg-[color:var(--color-surface)] rounded-full w-10 h-10 flex items-center justify-center shadow-md border border-[var(--color-border)] hover:bg-[color:var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)]/30 transition"
                                     onClick={() => setMenuOpen((v) => !v)}
                                     disabled={uploading}
                                     title="Opciones de foto de perfil"
                                     style={{ zIndex: 10 }}
                                 >
-                                    <MoreVertical className="h-6 w-6 text-primary" />
+                                    <MoreVertical className="h-6 w-6 text-[color:var(--color-primary)]" />
                                 </button>
                                 {menuOpen && (
                                     <>
@@ -282,7 +282,7 @@ export function ProfilePage() {
                                             aria-hidden="true"
                                         />
                                         <div
-                                            className="absolute z-50 bg-white border border-border rounded-xl shadow-xl w-56 flex flex-col animate-fade-in"
+                                            className="absolute z-50 bg-[color:var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl w-56 flex flex-col animate-fade-in"
                                             style={{
                                                 top: '0.5rem',
                                                 right: window.innerWidth >= 640 ? '-13.5rem' : '0',
@@ -292,7 +292,7 @@ export function ProfilePage() {
                                         >
                                             {!avatarUrl && (
                                                 <button
-                                                    className="flex items-center gap-2 px-4 py-3 hover:bg-muted/60 text-primary text-base rounded-xl transition"
+                                                    className="flex items-center gap-2 px-4 py-3 hover:bg-[color:var(--color-hover)] text-[color:var(--color-primary)] text-base rounded-xl transition"
                                                     onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}
                                                     disabled={uploading}
                                                 >
@@ -303,7 +303,7 @@ export function ProfilePage() {
                                             {avatarUrl && (
                                                 <>
                                                     <button
-                                                        className="flex items-center gap-2 px-4 py-3 hover:bg-muted/60 text-primary text-base rounded-t-xl transition"
+                                                        className="flex items-center gap-2 px-4 py-3 hover:bg-[color:var(--color-hover)] text-[color:var(--color-primary)] text-base rounded-t-xl transition"
                                                         onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}
                                                         disabled={uploading}
                                                     >
@@ -311,7 +311,7 @@ export function ProfilePage() {
                                                         Reemplazar foto
                                                     </button>
                                                     <button
-                                                        className="flex items-center gap-2 px-4 py-3 hover:bg-red-50 text-red-600 text-base rounded-b-xl border-t border-border transition"
+                                                        className="flex items-center gap-2 px-4 py-3 hover:bg-red-50 text-red-600 text-base rounded-b-xl border-t border-[var(--color-border)] transition"
                                                         onClick={() => { setMenuOpen(false); setConfirmDeleteOpen(true); }}
                                                         disabled={uploading}
                                                     >

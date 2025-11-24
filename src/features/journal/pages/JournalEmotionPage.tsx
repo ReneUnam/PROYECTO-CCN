@@ -61,13 +61,13 @@ export default function JournalEmotionPage() {
             <div className="mb-3">
                 <button
                     onClick={() => navigate('/journal')}
-                    className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-white text-sm font-medium hover:bg-muted"
+                    className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] text-sm font-medium hover:bg-[color:var(--color-hover)]"
                 >
                     ← Volver
                 </button>
             </div>
             {/* Tarjeta superior con CTA del día */}
-            <div className="mb-4 overflow-hidden rounded-xl border border-border bg-gradient-to-r from-sky-50 to-emerald-50 p-4 sm:flex sm:items-center sm:justify-between">
+            <div className="mb-4 overflow-hidden rounded-xl border border-border bg-gradient-to-r from-sky-50 to-emerald-50 dark:from-sky-800/10 dark:to-emerald-800/10 p-4 sm:flex sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                     <div className="text-3xl sm:text-4xl">🗓️</div>
                     <div>

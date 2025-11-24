@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { supabase } from "@/core/api/supabaseClient";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -56,12 +58,34 @@ export default function AdminUserDetailPage() {
     return () => { mounted = false; };
   }, [id]);
 
-  if (loading) return <div className="p-6">Cargando...</div>;
-  if (!profile) return <div className="p-6">Usuario no encontrado. <button onClick={() => navigate(-1)} className="ml-2 underline">Volver</button></div>;
+  if (loading) return <FullScreenLoader />;
+  if (!profile) return (
+    <div className="p-6">
+      Usuario no encontrado.
+      <div className="mt-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-muted"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Volver
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <section className="max-w-4xl mx-auto p-6">
-      <button onClick={() => navigate(-1)} className="text-sm text-primary underline mb-4">← Volver</button>
+      <div className="mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-muted"
+          aria-label="Volver a usuarios"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Volver
+        </button>
+      </div>
       <div className="flex items-center gap-4 mb-6">
         <Avatar className="h-16 w-16">
           {profile.avatar_url ? <AvatarImage src={profile.avatar_url} alt={`${profile.first_names} ${profile.last_names}`} /> : <AvatarFallback>{(profile.first_names ?? "")[0] || (profile.last_names ?? "")[0] || "U"}</AvatarFallback>}
@@ -75,22 +99,22 @@ export default function AdminUserDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-lg border border-border bg-white p-4">
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="text-sm text-text/60">Diarios</div>
           <div className="text-lg font-semibold">{counts.journals}</div>
         </div>
-        <div className="rounded-lg border border-border bg-white p-4">
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="text-sm text-text/60">Sesiones / Asignaciones</div>
           <div className="text-lg font-semibold">{counts.sessions}</div>
         </div>
-        <div className="rounded-lg border border-border bg-white p-4">
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="text-sm text-text/60">Buzón</div>
           <div className="text-lg font-semibold">{counts.mailbox}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-1 md:col-span-1 rounded-lg border border-border bg-white p-4">
+        <div className="col-span-1 md:col-span-1 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <h3 className="font-medium mb-2">Diarios recientes</h3>
           {recentJournals.length === 0 ? <div className="text-sm text-text/60">—</div> : (
             <ul className="space-y-2 text-sm">
@@ -103,7 +127,7 @@ export default function AdminUserDetailPage() {
           )}
         </div>
 
-        <div className="col-span-1 md:col-span-1 rounded-lg border border-border bg-white p-4">
+        <div className="col-span-1 md:col-span-1 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <h3 className="font-medium mb-2">Sesiones recientes</h3>
           {recentSessions.length === 0 ? <div className="text-sm text-text/60">—</div> : (
             <ul className="space-y-2 text-sm">
@@ -114,7 +138,7 @@ export default function AdminUserDetailPage() {
           )}
         </div>
 
-        <div className="col-span-1 md:col-span-1 rounded-lg border border-border bg-white p-4">
+        <div className="col-span-1 md:col-span-1 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <h3 className="font-medium mb-2">Buzón</h3>
           {recentMailbox.length === 0 ? <div className="text-sm text-text/60">—</div> : (
             <ul className="space-y-2 text-sm">

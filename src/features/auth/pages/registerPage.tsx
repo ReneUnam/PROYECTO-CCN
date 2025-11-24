@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/core/components/Cards';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useToast } from '@/components/toast/ToastProvider';
+import { ChevronLeft } from 'lucide-react';
 
 export function RequireAdmin({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -100,17 +101,19 @@ export default function RegisterPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-start justify-center px-4 py-6">
-      <Card className={`mt-6 w-full max-w-2xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform ${saved ? 'scale-105 shadow-lg' : ''}`}>
+    <div className="flex items-start justify-center px-4 py-4">
+      <Card className={`mt-4 w-full max-w-2xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform ${saved ? 'scale-105 shadow-lg' : ''}`}>
         <CardContent className="p-6 sm:p-8">
           <div className="mx-auto w-full">
             <div className="mb-4">
               <button
                 onClick={() => navigate('/admin/users')}
-                className="inline-flex items-center gap-2 text-sm text-[color:var(--color-primary)] hover:underline"
+                className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)] hover:bg-[color:var(--color-muted)]"
                 type="button"
+                aria-label="Volver a usuarios"
               >
-                ← Volver a usuarios
+                <ChevronLeft className="h-4 w-4" />
+                Volver
               </button>
             </div>
             <h1 className="mb-4 text-center text-2xl font-semibold text-[color:var(--color-text)]">Crear usuario</h1>
@@ -122,37 +125,37 @@ export default function RegisterPage() {
                   value={institutionId}
                   onChange={(e) => setInstitutionId(e.target.value)}
                   placeholder="Ej: 2025001"
-                  className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]"
+                  className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] placeholder:text-[color:var(--color-placeholder)] placeholder:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium opacity-90">Nombres</label>
-                  <Input value={firstNames} onChange={(e) => setFirstNames(e.target.value)} placeholder="Juan Carlos" className="w-full rounded-xl" />
+                  <Input value={firstNames} onChange={(e) => setFirstNames(e.target.value)} placeholder="Juan Carlos" className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] placeholder:text-[color:var(--color-placeholder)] placeholder:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]" />
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium opacity-90">Apellidos</label>
-                  <Input value={lastNames} onChange={(e) => setLastNames(e.target.value)} placeholder="Pérez López" className="w-full rounded-xl" />
+                  <Input value={lastNames} onChange={(e) => setLastNames(e.target.value)} placeholder="Pérez López" className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] placeholder:text-[color:var(--color-placeholder)] placeholder:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]" />
                 </div>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium opacity-90">Correo</label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@colegio.edu.ni" className="w-full rounded-xl" />
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@colegio.edu.ni" className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] placeholder:text-[color:var(--color-placeholder)] placeholder:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium opacity-90">Rol</label>
-                  <select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)]">
+                  <select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)] placeholder:text-[color:var(--color-placeholder)]">
                     <option value={2}>Teacher</option>
                     <option value={3}>Student</option>
                   </select>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium opacity-90">Contraseña temporal</label>
-                  <Input type="text" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} placeholder="Ej: abc12345" className="w-full rounded-xl" />
+                  <Input type="text" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} placeholder="Ej: abc12345" className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] placeholder:text-[color:var(--color-placeholder)] placeholder:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]" />
                 </div>
               </div>
 

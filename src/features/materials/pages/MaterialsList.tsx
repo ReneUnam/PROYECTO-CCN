@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { AddMaterialModal } from '../components/AddMaterialModal';
 import { EditMaterialModal } from '../components/EditMaterialModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -17,22 +19,23 @@ type MaterialItem = {
 };
 
 function PreviewModal({ open, url, onClose }: { open: boolean; url?: string | null; onClose: () => void }) {
-  if (!open || !url) return null;
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center">
+  if (typeof window === 'undefined' || !open || !url) return null;
+  const modal = (
+    <div className="fixed inset-0 z-[1000000] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative z-10 w-[90vw] max-w-4xl h-[80vh] rounded-lg bg-white shadow-lg overflow-hidden">
-        <header className="flex items-center justify-between p-3 border-b border-border">
+      <div className="relative z-10 w-[90vw] max-w-4xl h-[80vh] rounded-lg bg-[color:var(--color-surface)] shadow-lg overflow-hidden border border-[color:var(--color-border)]">
+        <header className="flex items-center justify-between p-3 border-b border-[color:var(--color-border)]">
           <h3 className="text-lg font-semibold">Vista previa</h3>
-          <button onClick={onClose} className="text-sm text-gray-600">Cerrar</button>
+          <button onClick={onClose} className="text-sm text-[color:var(--color-text)]">Cerrar</button>
         </header>
-        <div className="h-full">
+        <div className="h-full bg-[color:var(--color-surface)]">
           {/* Use iframe for a simple preview; can be replaced with pdf.js later */}
-          <iframe src={url} title="PDF preview" className="h-full w-full" />
+          <iframe src={url} title="PDF preview" className="h-full w-full bg-[color:var(--color-surface)]"/>
         </div>
       </div>
     </div>
   );
+  return ReactDOM.createPortal(modal, document.body);
 }
 
 export default function MaterialsList() {
@@ -50,10 +53,12 @@ export default function MaterialsList() {
   const [editing, setEditing] = useState<null | { id: string; title: string; description?: string | null }>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDelete, setToDelete] = useState<null | { id: string; file_path?: string | null; thumbnail_path?: string | null }>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch from DB (materials table); if empty, list will be []
   async function refresh() {
     try {
+      setIsLoading(true);
       const rows = await listMaterials();
       const mapped: MaterialItem[] = rows.map((r) => ({
         id: r.id,
@@ -68,6 +73,8 @@ export default function MaterialsList() {
     } catch (e) {
       console.warn('No se pudo cargar materiales desde la BD:', e);
       setItems([]);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -75,14 +82,13 @@ export default function MaterialsList() {
     refresh();
   }, []);
 
-  if (loading) return <div className="p-6">Cargando...</div>;
-
   return (
-    <section className="mx-auto max-w-6xl p-6">
+    <section className="mx-auto max-w-6xl p-6 relative">
+      {isLoading && <FullScreenLoader />}
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Recursos pedagógicos</h1>
         {canManage && (
-          <Button className="rounded-full bg-indigo-700 px-4 py-2 text-white" onClick={() => setAddOpen(true)}>
+          <Button className="rounded-full bg-[color:var(--color-primary)] text-white" onClick={() => setAddOpen(true)}>
             Agregar material
           </Button>
         )}

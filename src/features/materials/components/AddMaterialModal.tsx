@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { uploadMaterial } from '../api/materialsApi';
 import { Button } from '@/components/ui/button';
 
@@ -14,7 +15,7 @@ export function AddMaterialModal({ open, onClose, onCreated }: {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!open) return null;
+  if (!open || typeof window === 'undefined') return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +50,10 @@ export function AddMaterialModal({ open, onClose, onCreated }: {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+  const modal = (
+    <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative max-w-lg w-full rounded-lg bg-white p-5 shadow-lg max-h-[90vh] overflow-auto">
+      <div className="relative max-w-lg w-full rounded-lg bg-[color:var(--color-surface)] p-5 shadow-lg max-h-[90vh] overflow-auto border border-[color:var(--color-border)]">
         <h3 className="text-lg font-semibold mb-3">Agregar material</h3>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
@@ -76,7 +77,7 @@ export function AddMaterialModal({ open, onClose, onCreated }: {
           <div>
             <label className="block text-sm font-medium mb-1">PDF</label>
             <div className="flex items-center gap-3">
-              <label className="inline-flex items-center px-3 py-2 rounded-md bg-indigo-600 text-white cursor-pointer hover:bg-indigo-700">
+              <label className="inline-flex items-center px-3 py-2 rounded-md bg-[color:var(--color-primary)] text-white cursor-pointer hover:brightness-105">
                 Seleccionar PDF
                 <input
                   type="file"
@@ -93,7 +94,7 @@ export function AddMaterialModal({ open, onClose, onCreated }: {
           <div>
             <label className="block text-sm font-medium mb-1">Miniatura (opcional)</label>
             <div className="flex items-center gap-3">
-              <label className="inline-flex items-center px-3 py-2 rounded-md bg-indigo-600 text-white cursor-pointer hover:bg-indigo-700">
+              <label className="inline-flex items-center px-3 py-2 rounded-md bg-[color:var(--color-primary)] text-white cursor-pointer hover:brightness-105">
                 Seleccionar imagen
                 <input
                   type="file"
@@ -109,8 +110,8 @@ export function AddMaterialModal({ open, onClose, onCreated }: {
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" onClick={onClose} className="bg-gray-200 text-gray-800">Cancelar</Button>
-            <Button type="submit" disabled={submitting} className="bg-indigo-700 text-white">
+            <Button type="button" onClick={onClose} variant="ghost">Cancelar</Button>
+            <Button type="submit" disabled={submitting} variant="primary" className="bg-[color:var(--color-secondary)] text-white">
               {submitting ? 'Subiendo…' : 'Guardar'}
             </Button>
           </div>
@@ -118,4 +119,5 @@ export function AddMaterialModal({ open, onClose, onCreated }: {
       </div>
     </div>
   );
+  return ReactDOM.createPortal(modal, document.body);
 }
