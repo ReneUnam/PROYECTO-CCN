@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom';
 import Cropper from 'react-easy-crop';
 import Modal from 'react-modal';
 import { supabase } from '@/core/api/supabaseClient';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 // Utilidad para extraer el nombre del archivo de la URL pública de Supabase
 function getFileNameFromUrl(url: string) {
     const parts = url.split('/');
@@ -155,7 +156,7 @@ export function ProfilePage() {
     }, []);
 
 
-    if (loading || !user) return <div className="py-20 text-center text-lg">Cargando perfil…</div>;
+    if (loading || !user) return <FullScreenLoader />;
 
     return (
         <>

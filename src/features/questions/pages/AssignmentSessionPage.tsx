@@ -143,47 +143,51 @@ export function AssignmentSessionPage() {
   if (!surveyId || !total || !sessionId) return <FullScreenLoader />;
 
   if (readOnly) {
-    // Vista solo lectura: lista vertical simple de preguntas y respuestas
+    // Vista solo lectura: lista vertical simple de preguntas y respuestas (diseño mejorado)
     return (
       <div className="mx-auto max-w-3xl px-4 py-8 text-text bg-surface min-h-screen transition-colors dark:bg-surface">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted dark:bg-surface dark:border-border dark:text-text"
-          >
-            ← Volver
-          </button>
-          <h1 className="text-xl font-bold truncate dark:text-text">
-            {surveyName || "Respuestas de la sesión"}
-          </h1>
-          <button
-            onClick={() => navigate("/questions")}
-            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted dark:bg-surface dark:border-border dark:text-text"
-          >
-            Cerrar
-          </button>
+        <div className="mb-8 relative">
+          <div className="flex items-center">
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Volver"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-surface p-2 text-sm hover:bg-muted dark:bg-surface dark:border-border"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="flex-1 text-center">
+              <h1 className="mx-auto text-xl font-semibold truncate dark:text-text">
+                {surveyName || "Respuestas de la sesión"}
+              </h1>
+              <p className="mt-1 text-sm text-text/60">Visualización de respuestas · {questions.length} pregunta{questions.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
         </div>
+
         {questions.length === 0 && (
           <div className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-text/60 dark:bg-surface dark:border-border dark:text-text/60">
             Sin preguntas en esta sesión.
           </div>
         )}
+
         <div className="space-y-6">
           {questions.map((q, idx) => {
             const answered = !!answers[q.id]?.text?.trim();
             return (
               <div
                 key={q.id}
-                className="rounded-xl border border-border bg-white/90 p-6 shadow-sm dark:bg-muted dark:border-border transition-colors"
+                className="rounded-2xl border border-border bg-white p-6 shadow-md transition-colors"
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-8 w-8 flex items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-base dark:bg-primary/20 dark:text-primary">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
                     {idx + 1}
                   </div>
-                  <h2 className="text-base font-semibold leading-snug flex-1 dark:text-text">{q.prompt}</h2>
-                </div>
-                <div className={answered ? "whitespace-pre-wrap text-[15px] text-text/90 dark:text-text" : "italic text-text/50 dark:text-text/50"}>
-                  {answered ? answers[q.id]!.text : "(Sin respuesta)"}
+                  <div className="flex-1">
+                    <h2 className="text-base font-semibold leading-snug mb-2 text-text">{q.prompt}</h2>
+                    <div className={answered ? "whitespace-pre-wrap text-[15px] text-text/90" : "italic text-text/50"}>
+                      {answered ? answers[q.id]!.text : "(Sin respuesta)"}
+                    </div>
+                  </div>
                 </div>
               </div>
             );

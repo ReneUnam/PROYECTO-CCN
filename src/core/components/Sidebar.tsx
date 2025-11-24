@@ -142,7 +142,7 @@ export function Sidebar({ open }: SidebarProps) {
                         }
                       >
                         <Inbox className="h-4 w-4" />
-                        <span>Buzón</span>
+                        <span>Administrar buzón</span>
                       </NavLink>
                     </li>
                     {/* Sesiones de preguntas (envuelto en <li>) */}
@@ -158,7 +158,7 @@ export function Sidebar({ open }: SidebarProps) {
                         }
                       >
                         <ListChecks className="h-4 w-4" />
-                        <span>Sesiones de preguntas</span>
+                        <span>Nueva sesión de preguntas</span>
                       </NavLink>
                     </li>
                     <li>
@@ -204,7 +204,7 @@ export function Sidebar({ open }: SidebarProps) {
                           ].join(" ")
                         }
                       >
-                        <NotebookPen className="h-4 w-4" />
+                        <CalendarCheck className="h-4 w-4" />
                         <span>Monitor del diario</span>
                       </NavLink>
                     </li>
