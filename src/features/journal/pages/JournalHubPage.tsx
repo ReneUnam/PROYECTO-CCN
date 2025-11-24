@@ -1,16 +1,20 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getStreak } from "@/features/journal/api/journalApi";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 
 export function JournalHubPage() {
   const [streakEmo, setStreakEmo] = useState(0);
   const [streakSelf, setStreakSelf] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     (async () => {
       const [a, b] = await Promise.all([getStreak("emotions"), getStreak("self-care")]);
       setStreakEmo(a.current_streak ?? 0);
       setStreakSelf(b.current_streak ?? 0);
+      setLoading(false);
     })();
   }, []);
 
@@ -18,6 +22,8 @@ export function JournalHubPage() {
     { key: "emotions", title: "Diario emocional", description: "Registra emociones, sentimientos y sensaciones con emojis.", icon: "😌", route: "/journal/emotions", streak: streakEmo },
     { key: "self-care", title: "Diario de autocuido", description: "Evalúa energía, sueño, actividad física y autocalificación.", icon: "🌿", route: "/journal/self-care", streak: streakSelf },
   ];
+
+  if (loading) return <FullScreenLoader />;
 
   return (
     <section className="mx-auto max-w-6xl space-y-6 text-text">

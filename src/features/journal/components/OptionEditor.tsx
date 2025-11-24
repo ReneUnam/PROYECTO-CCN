@@ -48,7 +48,7 @@ export function OptionEditor({ value, onChange }: Props) {
             return {
               ...o,
               label: finalLabel,
-              key: slugify(finalLabel), // sólo aquí cambia la key
+              key: slugify(finalLabel),
             };
         });
         // Emitir lista sin campos internos
@@ -58,49 +58,6 @@ export function OptionEditor({ value, onChange }: Props) {
     },
     [onChange]
   );
-
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const [showAdvanced] = useState(false);
-  const list = useMemo(() => value, [value]);
-
-  const uniqueKey = (base: string, idx: number) => {
-    let k = base;
-    let n = 2;
-    const all = new Set(list.map((o, i) => (i === idx ? "__self__" : o.key)));
-    while (all.has(k)) {
-      k = `${base}-${n++}`;
-    }
-    return k;
-  };
-
-    // Editar buffer sin cambiar key ni emitir onChange inmediato
-  const editBuffer = (id: string, txt: string) => {
-    setLocal((prev) =>
-      prev.map((o) => (o._id === id ? { ...o, _buffer: txt } : o))
-    );
-  };
-
-  const update = (idx: number, patch: Partial<Option>) => {
-    const next = [...list];
-    const prev = next[idx];
-    // Sin “avanzado”, sincroniza key con label automáticamente
-    if (!showAdvanced && patch.label != null) {
-      const base = slugify(patch.label);
-      patch.key = uniqueKey(base, idx);
-    }
-    next[idx] = { ...prev, ...patch };
-    onChange(next);
-  };
-
-    const remove = (id: string) => {
-    setLocal((prev) => {
-      const next = prev.filter((o) => o._id !== id);
-      onChange(next.map(({ _id, _buffer, ...rest }) => rest));
-      return next;
-    });
-  };
-
-  const removeAt = (idx: number) => onChange(list.filter((_, i) => i !== idx));
     const addNew = () => {
     setLocal((prev) => {
       const newOpt: LocalOption = {
@@ -116,6 +73,20 @@ export function OptionEditor({ value, onChange }: Props) {
     });
   };
 
+    // Editar buffer sin cambiar key ni emitir onChange inmediato
+    const editBuffer = (id: string, txt: string) => {
+      setLocal((prev) => prev.map((o) => (o._id === id ? { ...o, _buffer: txt } : o)));
+    };
+
+    // Eliminar opción
+    const remove = (id: string) => {
+      setLocal((prev) => {
+        const next = prev.filter((o) => o._id !== id);
+        onChange(next.map(({ _id, _buffer, ...rest }) => rest));
+        return next;
+      });
+    };
+
    return (
     <div className="space-y-2">
       {local.map((opt) => (
@@ -123,24 +94,19 @@ export function OptionEditor({ value, onChange }: Props) {
           key={opt._id} // clave estable, NO la mutable slug/key
           className="flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1"
         >
-          <button
-            type="button"
-            className="grid h-8 w-8 place-items-center rounded-md border border-border text-sm"
-            onClick={() => {
-              // Alternar emoji rápido (placeholder simple)
-              const nextEmoji = opt.emoji === "👍" ? "✨" : "👍";
+          <EmojiButton
+            emoji={opt.emoji}
+            onPick={(emoji) => {
               setLocal((prev) =>
-                prev.map((o) => (o._id === opt._id ? { ...o, emoji: nextEmoji } : o))
+                prev.map((o) => (o._id === opt._id ? { ...o, emoji } : o))
               );
               onChange(
                 local.map(({ _id, _buffer, ...rest }) =>
-                  rest.key === opt.key ? { ...rest, emoji: nextEmoji } : rest
+                  rest.key === opt.key ? { ...rest, emoji } : rest
                 )
               );
             }}
-          >
-            {opt.emoji || <Smile className="h-4 w-4 opacity-60" />}
-          </button>
+          />
           <input
             value={opt._buffer}
             onChange={(e) => editBuffer(opt._id, e.target.value)}
@@ -172,6 +138,45 @@ export function OptionEditor({ value, onChange }: Props) {
       >
         <Plus className="h-3 w-3" /> Agregar opción
       </button>
+    </div>
+  );
+}
+
+// Botón para mostrar el EmojiPicker como popover
+function EmojiButton({ emoji, onPick }: { emoji?: string; onPick: (e: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLButtonElement>(null);
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        ref={ref}
+        className="grid h-8 w-8 place-items-center rounded-md border border-border text-sm"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {emoji || <Smile className="h-4 w-4 opacity-60" />}
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            zIndex: 20,
+            top: "110%",
+            left: 0,
+            background: "white",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+          }}
+        >
+          <EmojiPicker
+            onPick={(e) => {
+              setOpen(false);
+              onPick(e);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

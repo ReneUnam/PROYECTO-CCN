@@ -21,9 +21,13 @@ export function loadLocalAnswers(entryId: string): SaveShape {
 export function saveLocalAnswers(entryId: string, data: SaveShape) {
     try {
         const current = loadLocalAnswers(entryId);
+        // If the caller provides `selected` or `scales`, treat those as the
+        // authoritative current state (replace). This ensures deletions
+        // (removing a key from `scales`) persist instead of being merged back
+        // from previous saved state.
         const merged: SaveShape = {
-            selected: { ...(current.selected ?? {}), ...(data.selected ?? {}) },
-            scales: { ...(current.scales ?? {}), ...(data.scales ?? {}) },
+            selected: data.selected !== undefined ? data.selected : current.selected,
+            scales: data.scales !== undefined ? data.scales : current.scales,
         };
         localStorage.setItem(key(entryId), JSON.stringify(merged));
     } catch {

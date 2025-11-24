@@ -92,7 +92,7 @@ export default function LoginPage() {
 
                             <form onSubmit={onSubmit} className="space-y-5 text-[color:var(--color-text)]">
                                 <div>
-                                    <label htmlFor="studentId" className="mb-2 block text-sm font-medium opacity-90">Carnet</label>
+                                    <label htmlFor="studentId" className="mb-2 block text-sm font-medium opacity-90">Id institucional</label>
                                     <Input
                                         id="studentId"
                                         value={studentId}
@@ -151,7 +151,7 @@ export default function LoginPage() {
                                 )}
 
                                 <p className="mt-2 text-center text-xs text-[color:var(--color-text)]/70">
-                                    Si es tu primer acceso, escribe tu carnet y la contraseña temporal. Te enviaremos un código para activar tu cuenta.
+                                    Si es tu primer acceso, escribe tu id institucional y la contraseña. Te enviaremos un código para activar tu cuenta.
                                 </p>
                             </form>
                         </div>

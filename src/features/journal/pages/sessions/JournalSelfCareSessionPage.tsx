@@ -62,6 +62,20 @@ export function JournalSelfCareSessionPage() {
         setItems(its);
 
         const saved = id ? loadLocalAnswers(id) : {};
+        // If nothing is saved under the entry-specific key, try a last-draft fallback.
+        if ((!saved.selected || Object.keys(saved.selected).length === 0) && (!saved.scales || Object.keys(saved.scales).length === 0)) {
+          try {
+            const raw = localStorage.getItem("journal:lastDraft:self-care");
+            if (raw) {
+              const parsed = JSON.parse(raw) as any;
+              if (parsed?.selected) saved.selected = parsed.selected;
+              if (parsed?.scales) saved.scales = parsed.scales;
+            }
+          } catch {
+            // ignore
+          }
+        }
+
         if (saved.selected) {
           setSelected(
             Object.fromEntries(Object.entries(saved.selected).map(([k, v]) => [Number(k), new Set(v as string[])]))
@@ -99,15 +113,34 @@ export function JournalSelfCareSessionPage() {
     });
   };
 
-  const setScale = async (itemId: number, v: number) => {
+  const setScale = async (itemId: number, v: number | null) => {
     setScales((s) => {
-      const next = { ...s, [itemId]: v };
+      const next = { ...s } as Record<number, number | undefined>;
+      if (v == null) delete next[itemId];
+      else next[itemId] = v;
       if (entryId) void upsertAnswer(entryId, itemId, { scale: v });
       return next;
     });
   };
 
-  const onSaveDraft = () => navigate("/journal/self-care");
+  const onSaveDraft = () => {
+    if (entryId) {
+      const toSave = {
+        selected: Object.fromEntries(Object.entries(selected).map(([k, v]) => [k, Array.from(v)])),
+        scales,
+      };
+      saveLocalAnswers(entryId, toSave);
+      try {
+        localStorage.setItem(
+          "journal:lastDraft:self-care",
+          JSON.stringify({ entryId, ...toSave })
+        );
+      } catch {
+        // ignore
+      }
+    }
+    navigate("/journal");
+  };
 
   const onFinish = async () => {
     if (!entryId) return;

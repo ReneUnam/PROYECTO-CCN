@@ -9,6 +9,7 @@ export interface UserProfile {
   first_names?: string | null;
   last_names?: string | null;
   email?: string | null;
+  avatar_url?: string | null;
 }
 
 export const useAuth = () => {
@@ -39,7 +40,7 @@ export const useAuth = () => {
         // 1) por vínculo
         let { data: profile } = await supabase
           .from('profiles')
-          .select('id, first_names, last_names, role_id, email, auth_user_id')
+          .select('id, first_names, last_names, role_id, email, auth_user_id, avatar_url')
           .eq('auth_user_id', authUser.id)
           .maybeSingle();
 
@@ -47,7 +48,7 @@ export const useAuth = () => {
         if (!profile && authUser.email) {
           const byEmail = await supabase
             .from('profiles')
-            .select('id, first_names, last_names, role_id, email, auth_user_id')
+            .select('id, first_names, last_names, role_id, email, auth_user_id, avatar_url')
             .eq('email', authUser.email)
             .maybeSingle();
           profile = byEmail.data ?? null;
@@ -64,8 +65,16 @@ export const useAuth = () => {
         if (active) {
           setUser(
             profile
-              ? { id: profile.id, full_name: name, role_id: (profile.role_id as RoleId) ?? 3, first_names: profile.first_names, last_names: profile.last_names, email }
-              : { id: authUser.id, full_name: name, role_id: 3, email }
+              ? {
+                  id: profile.id,
+                  full_name: name,
+                  role_id: (profile.role_id as RoleId) ?? 3,
+                  first_names: profile.first_names,
+                  last_names: profile.last_names,
+                  email,
+                  avatar_url: profile.avatar_url ?? null,
+                }
+              : { id: authUser.id, full_name: name, role_id: 3, email, avatar_url: null }
           );
           setLastSessionId(sessionId);
         }

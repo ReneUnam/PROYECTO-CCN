@@ -123,16 +123,39 @@ export function JournalAdminPage() {
   }, [selectedVersion]);
 
   async function onClone() {
+    // Create a new draft version on the server (the RPC may clone the
+    // active version). To avoid carrying all active-version items into the
+    // new draft, remove any items copied during cloning so the draft starts
+    // empty and the admin can add items intentionally.
     const vid = await adminCloneVersion(selectedForm.type);
+    // rename the draft to a sensible default if it has no explicit name
     const vs = await adminGetVersions(selectedForm.id);
     const justCreated = vs.find((v: any) => v.id === vid);
     const defaultName = generateDefaultDraftName(vs);
     if (justCreated && !hasNonEmptyName(justCreated)) {
       try { await adminRenameVersion(vid, defaultName); } catch { }
     }
+
+    // Remove any items that were copied into the draft so it doesn't inherit
+    // the full content of the active version.
+    if (justCreated) {
+      try {
+        const copied = await adminGetItems(justCreated.id);
+        if (Array.isArray(copied) && copied.length) {
+          // delete each copied item (server-side RPCs enforce permissions)
+          await Promise.all(copied.map((it: any) => adminDeleteItem(it.id)));
+        }
+      } catch (e) {
+        // If deletion fails, do not block the UI; log for debugging.
+        console.error("Failed to prune cloned items for new draft:", e);
+      }
+    }
+
     const refreshed = await adminGetVersions(selectedForm.id);
     setVersions(refreshed);
     setSelectedVersion(refreshed.find((v: any) => v.id === vid) ?? refreshed[0]);
+    // ensure items view refreshes (effect will load items for selectedVersion)
+    setItems([]);
     info("Se creó un borrador");
   }
 

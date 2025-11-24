@@ -5,10 +5,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
-  Save,
   HelpCircle,
   Clock,
-  User,
   CalendarClock,
   AlertCircle,
 } from "lucide-react";
@@ -40,6 +38,8 @@ export function AssignmentSessionPage() {
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session"));
   const [surveyId, setSurveyId] = useState<number | null>(null);
   const [surveyName, setSurveyName] = useState<string>("");
+  const [dueAt, setDueAt] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Q[]>([]);
   const [answers, setAnswers] = useState<Record<number, { text: string }>>({});
   const [index, setIndex] = useState(0);
@@ -49,9 +49,10 @@ export function AssignmentSessionPage() {
   useEffect(() => {
     if (!assignmentId) return;
     getAssignmentDetail(Number(assignmentId))
-      .then(({ survey_id, survey_name }) => {
+      .then(({ survey_id, survey_name, end_at }) => {
         setSurveyId(survey_id);
         setSurveyName(survey_name);
+        setDueAt(end_at ?? null);
       })
       .catch((e) => toast.error(e.message || "Error al cargar la asignación"));
   }, [assignmentId]);
@@ -105,6 +106,7 @@ export function AssignmentSessionPage() {
     if (!sessionId) return;
     try {
       await upsertResponse({ sessionId, questionId: qid, value });
+      setLastSavedAt(new Date().toISOString());
     } catch (e: any) {
       console.error("upsert_response error:", e?.message || e);
     }
@@ -118,11 +120,7 @@ export function AssignmentSessionPage() {
     timersRef.current[qid] = window.setTimeout(() => persist(qid, value), 400);
   }
 
-  async function saveDraft() {
-    if (readOnly || !current) return;
-    await persist(current.id, answers[current.id] ?? { text: "" });
-    toast.success("Borrador guardado");
-  }
+  // 'saveDraft' removed because auto-save handles persistence
 
   async function onSubmitAll() {
     if (readOnly || !sessionId) return;
@@ -266,15 +264,21 @@ export function AssignmentSessionPage() {
             </div>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
-                <User className="h-4 w-4 text-text/60" /> Profesor: —
-              </li>
-              <li className="flex items-center gap-2">
-                <CalendarClock className="h-4 w-4 text-text/60" /> Entrega: —
+                <CalendarClock className="h-4 w-4 text-text/60" />
+                <span>
+                  <strong>Vencimiento:</strong>{" "}
+                  {dueAt ? new Date(dueAt).toLocaleString() : "—"}
+                </span>
               </li>
               <li className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-text/60" /> Guardado
                 automático
               </li>
+              {lastSavedAt && (
+                <li className="flex items-center gap-2 text-xs text-text/60">
+                  Último guardado: {new Date(lastSavedAt).toLocaleString()}
+                </li>
+              )}
             </ul>
           </section>
         </aside>
@@ -293,14 +297,7 @@ export function AssignmentSessionPage() {
             Anterior
           </button>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={saveDraft}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted"
-            >
-              <Save className="h-4 w-4" />
-              Guardar borrador
-            </button>
+            {/* 'Guardar borrador' eliminado: se mantiene guardado automático */}
             {index < total - 1 ? (
               <button
                 type="button"

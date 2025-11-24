@@ -1,6 +1,6 @@
 type Props = {
   value?: number | null;
-  onChange?: (v: number) => void;
+  onChange?: (v: number | null) => void;
   labels?: string[] | null;
   min?: number | null;
   max?: number | null;
@@ -49,9 +49,12 @@ export function LikertScale({
       start.g + (end.g - start.g) * t
     )},${Math.round(start.b + (end.b - start.b) * t)})`;
 
+  const hasEdgeLabels = padded[0] || padded[padded.length - 1];
+  const showSideLabels = (leftLabel || rightLabel) && !hasEdgeLabels;
+
   return (
     <div className={className}>
-      {(leftLabel || rightLabel) && (
+      {showSideLabels && (
         <div className="mb-2 flex justify-between text-[10px] text-text/60 px-1">
           <span>{leftLabel}</span>
           <span>{rightLabel}</span>
@@ -74,7 +77,15 @@ export function LikertScale({
               type="button"
 
               disabled={disabled || readOnly}
-              onClick={() => !disabled && !readOnly && onChange?.(val)}
+              onClick={() => {
+                    if (disabled || readOnly) return;
+                    if (active) {
+                      onChange?.(null);
+                    } else {
+                      onChange?.(val);
+                    }
+                  }
+              }
               className={
                 "relative flex items-center justify-center rounded-full transition " +
                 (active ? "scale-105" : "hover:scale-105") +
