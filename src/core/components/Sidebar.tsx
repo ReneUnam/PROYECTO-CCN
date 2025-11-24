@@ -207,6 +207,21 @@ export function Sidebar({ open }: SidebarProps) {
                         <span>Monitor del diario</span>
                       </NavLink>
                     </li>
+                      <li>
+                        <NavLink
+                          to="/admin/users"
+                          className={({ isActive }) =>
+                            [
+                              "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                              "hover:bg-primary/10",
+                              isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
+                            ].join(" ")
+                          }
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Usuarios</span>
+                        </NavLink>
+                      </li>
                   </ul>
                 )}
               </li>

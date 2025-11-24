@@ -22,6 +22,8 @@ import JournalSelfCarePage from "@/features/journal/pages/JournalSelfCarePage";
 import MailboxPage from "@/features/mailbox/pages/MailboxPage";
 import AdminMailboxPage from "@/features/mailbox/pages/AdminMailboxPage";
 import { AdminJournalMonitorPage } from "@/features/journal/AdminJournalMonitorPage";
+import AdminUsersPage from "@/features/users/pages/AdminUsersPage";
+import AdminUserDetailPage from "@/features/users/pages/AdminUserDetailPage";
 
 const router = createBrowserRouter([
   
@@ -57,6 +59,8 @@ const router = createBrowserRouter([
             element: <RequireAdmin />,
             children: [
               { path: "/register", element: <RegisterPage /> },
+              { path: "/admin/users", element: <AdminUsersPage /> },
+                { path: "/admin/users/:id", element: <AdminUserDetailPage /> },
               { path: "/admin/assignments/manage", element: <AdminAssignmentsPage /> },
               { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
               { path: "/admin/journal", element: <JournalAdminPage /> },
