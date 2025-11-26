@@ -1,6 +1,5 @@
 import { ThemeToggle } from "./ThemeToggle";
 import { Menu } from "lucide-react";
-import { Link } from "react-router-dom";
 
 
 type Props = { onToggleSidebar?: () => void };

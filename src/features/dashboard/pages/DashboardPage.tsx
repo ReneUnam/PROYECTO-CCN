@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { PendingAssignments } from "@/features/questions/components/PendingAssignments";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { supabase } from "@/core/api/supabaseClient";
 import { getMyStreakAll } from "@/features/journal/api/journalApi";
@@ -40,6 +40,7 @@ const quickActions = [
     id: 'materials',
     title: 'Materiales',
     description: 'Recursos pedagógicos y documentos',
+    image: 'https://img.freepik.com/free-photo/still-life-documents-stack_23-2151088805.jpg',
     route: '/resources',
     // allowed solo para role_id 2 (teacher)
     allowedRoleIds: [1, 2],
@@ -88,6 +89,20 @@ export function DashboardPage() {
     { id: "emoStreak", title: "Constancia del diario emocional", value: streakEmo != null ? `${streakEmo} día${streakEmo === 1 ? '' : 's'}` : "-" },
     { id: "answers", title: "Preguntas contestadas hoy", value: answeredToday != null ? String(answeredToday) : "-" },
   ];
+
+  const tips = [
+    { text: 'Prioriza 10 minutos de respiración consciente.', highlight: 'Pequeños hábitos sostienen grandes cambios.' },
+    { text: 'Toma agua regularmente para mantenerte hidratado.', highlight: 'La hidratación mejora el ánimo y la concentración.' },
+    { text: 'Haz una caminata corta de 15 minutos.', highlight: 'El movimiento despeja la mente.' },
+    { text: 'Escribe tres cosas por las que estás agradecido hoy.', highlight: 'La gratitud cambia la perspectiva.' },
+    { text: 'Practica 5 minutos de atención plena.', highlight: 'La calma se practica, no aparece por arte de magia.' },
+    { text: 'Comparte una sonrisa con alguien.', highlight: 'Pequeños gestos crean conexiones.' },
+  ];
+
+  const tipOfDay = useMemo(() => {
+    const days = Math.floor(Date.now() / 86400000);
+    return tips[days % tips.length];
+  }, []);
 
   if (authLoading || loading || !user) return <FullScreenLoader />;
 
@@ -155,11 +170,11 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {/* ...existing code... */}
+      {/* Consejo del día dinámico */}
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <p className="text-sm">
-          Consejo del día: prioriza 10 minutos de respiración consciente.{' '}
-          <span className="font-semibold text-brand-gold">Pequeños hábitos sostienen grandes cambios.</span>
+          Consejo del día: {tipOfDay.text}{' '}
+          <span className="font-semibold text-brand-gold">{tipOfDay.highlight}</span>
         </p>
       </section>
     </section>

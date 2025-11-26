@@ -242,6 +242,23 @@ export default function AdminUsersPage() {
             </button>
           </div>
         </div>
+        {/* Mobile filters (visible only on small screens) */}
+        <div className="block sm:hidden mt-3">
+          <div className="space-y-2">
+            <select value={roleFilter ?? ''} onChange={(e) => { setPage(1); setRoleFilter(e.target.value ? Number(e.target.value) : null); }} className="w-full rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)]">
+              <option value="">Todos</option>
+              <option value="3">Estudiantes</option>
+              <option value="2">Docentes</option>
+              <option value="1">Admins</option>
+            </select>
+
+            <select value={activationFilter} onChange={(e) => { setPage(1); setActivationFilter(e.target.value as any); }} className="w-full rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)]">
+              <option value="all">Todos</option>
+              <option value="activated">Activos</option>
+              <option value="not_activated">Inactivos</option>
+            </select>
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full min-w-0">
           <div className="flex items-center gap-3">
@@ -368,14 +385,16 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="p-2 text-right">
-                        {u.id !== currentAuthUserId && (
+                        {u.id !== currentAuthUserId && !!u.auth_user_id && u.role_id !== 1 ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); setModalUser(u); setShowModal(true); setDeactivateError(undefined); }}
                             className={`rounded-md px-3 py-1 text-sm ${u.is_disabled ? 'bg-[color:var(--color-surface)] text-[color:var(--color-secondary)] border border-[var(--color-border)] hover:bg-[color:var(--color-hover)]' : 'bg-red-600 text-white hover:bg-red-700'}`}
                           >
                             {u.is_disabled ? 'Reactivar' : 'Dar de baja'}
                           </button>
-                        )}
+                        ) : (u.role_id === 1 ? (
+                          <span className="text-xs text-[color:var(--color-text)]/60">No aplicable (admin)</span>
+                        ) : null)}
                       </td>
                     </tr>
                   ))}
@@ -414,12 +433,21 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
                       <div className="text-xs text-[color:var(--color-text)]/60">{u.email ?? u.id}</div>
-                      <div className="mt-2 flex items-center gap-3 text-xs text-text/60">
+                      <div className="mt-2 flex flex-col sm:flex-row items-start gap-2 text-xs text-text/60">
                         <div>{u.role_id === 1 ? "Admin" : u.role_id === 2 ? "Teacher" : "Student"}</div>
                         <div className="truncate">{u.institution_id ?? "—"}</div>
+                        <div className="text-[color:var(--color-text)]/70">{u.created_at ? new Date(u.created_at).toLocaleString() : "—"}</div>
                       </div>
                       <div className="mt-2 flex justify-end">
-                        <button onClick={(e) => { e.stopPropagation(); setModalUser(u); setShowModal(true); setDeactivateError(undefined); }} className="rounded-md px-3 py-1 text-sm bg-[color:var(--color-surface)] border border-[var(--color-border)] text-[color:var(--color-secondary)] hover:bg-[color:var(--color-hover)]">{u.is_disabled ? 'Reactivar' : 'Dar de baja'}</button>
+                        { !!u.auth_user_id ? (
+                          u.role_id !== 1 ? (
+                            <button onClick={(e) => { e.stopPropagation(); setModalUser(u); setShowModal(true); setDeactivateError(undefined); }} className={`rounded-md px-3 py-1 text-sm ${u.is_disabled ? 'bg-[color:var(--color-surface)] text-[color:var(--color-secondary)] border border-[var(--color-border)] hover:bg-[color:var(--color-hover)]' : 'bg-red-600 text-white hover:bg-red-700'}`}>{u.is_disabled ? 'Reactivar' : 'Dar de baja'}</button>
+                          ) : (
+                            <span className="text-xs text-[color:var(--color-text)]/60">No aplicable (admin)</span>
+                          )
+                        ) : (
+                          <span className="text-xs text-[color:var(--color-text)]/60">Sin cuenta</span>
+                        )}
                       </div>
                     </div>
                   </div>
