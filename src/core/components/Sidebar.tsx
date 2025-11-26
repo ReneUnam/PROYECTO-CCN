@@ -142,7 +142,7 @@ export function Sidebar({ open }: SidebarProps) {
                           }
                         >
                           <Inbox className="h-4 w-4" />
-                          <span>Buzón</span>
+                          <span>Administrar buzón</span>
                         </NavLink>
                       </li>
                     <li>
@@ -188,55 +188,10 @@ export function Sidebar({ open }: SidebarProps) {
                           }
                         >
                           <ListChecks className="h-4 w-4" />
-                          <span>Sesiones de preguntas</span>
+                          <span>Nueva sesión de preguntas</span>
                         </NavLink>
                       </li>
-                    <li>
-                      <NavLink
-                        to="/admin/mailbox"
-                        className={({ isActive }) =>
-                          [
-                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                            "hover:bg-primary/10",
-                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                          ].join(" ")
-                        }
-                      >
-                        <Inbox className="h-4 w-4" />
-                        <span>Administrar buzón</span>
-                      </NavLink>
-                    </li>
-                    {/* Sesiones de preguntas (envuelto en <li>) */}
-                    <li>
-                      <NavLink
-                        to="/admin/assignments/manage"
-                        className={({ isActive }) =>
-                          [
-                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                            "hover:bg-primary/10",
-                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                          ].join(" ")
-                        }
-                      >
-                        <ListChecks className="h-4 w-4" />
-                        <span>Nueva sesión de preguntas</span>
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/admin/questions/dashboard"
-                        className={({ isActive }) =>
-                          [
-                            "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                            "hover:bg-primary/10",
-                            isActive ? "bg-secondary/10 text-tertiary font-semibold" : "text-text",
-                          ].join(" ")
-                        }
-                      >
-                        <BarChart3 className="h-4 w-4" />
-                        <span>Resultados de preguntas</span>
-                      </NavLink>
-                    </li>
+                    {/* (Deduplicated admin links above) */}
                     {/* Nuevo: Administración del Diario */}
                     <li>
                       <NavLink
