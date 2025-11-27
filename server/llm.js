@@ -20,7 +20,7 @@ export async function streamLLM(messages, onToken) {
     options: {
       temperature: 0.3, // Directo
       num_ctx: 2048,
-      num_predict: 384, // Más largo para evitar cortes
+      num_predict: 200, // Más rápido, menos texto
       top_p: 0.9 // Menos divagación
     }
   };
