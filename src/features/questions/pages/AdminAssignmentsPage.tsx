@@ -4,6 +4,7 @@ import { useToast } from "@/components/toast/ToastProvider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createSurveyWithQuestionsAndAssign } from "../api/assignmentsApi";
+import { ListCheck } from "lucide-react";
 
 function pad2(n: number) { return String(n).padStart(2, "0"); }
 function oneMonthFromNowLocal() {
@@ -58,7 +59,13 @@ export default function AdminAssignmentsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 text-[color:var(--color-text)]">
       <div className="space-y-2">
+        <div className="mb-3 flex items-center gap-3">
+                      <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
+                <ListCheck className="h-5 w-5" />
+              </div>
         <h1 className="text-3xl font-semibold">Nueva sesión de preguntas</h1>
+        </div>
+        
         <p className="text-sm text-[color:var(--color-text)]/70">
           Define el título, audiencia y preguntas abiertas que recibirán los usuarios seleccionados.
         </p>

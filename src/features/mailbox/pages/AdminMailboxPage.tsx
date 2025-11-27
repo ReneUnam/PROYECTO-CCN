@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/components/toast/ToastProvider';
 import { adminListSuggestions, deleteSuggestion } from '../api/mailboxApi';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { InboxIcon } from 'lucide-react';
 
 type Row = {
   id: string;
@@ -38,10 +39,16 @@ export default function AdminMailboxPage() {
   return (
     <section className="mx-auto max-w-6xl p-6 space-y-6">
       <header className="mb-2">
-        <h1 className="text-2xl font-bold">Buzón (Admin)</h1>
-        <p className="text-sm text-gray-600">Listado de sugerencias enviadas por docentes y estudiantes.</p>
+        <div className="mb-3 flex items-center gap-3">
+          <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
+            <InboxIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Buzón (Admin)</h1>
+            <p className="text-sm text-gray-600">Listado de sugerencias enviadas por docentes y estudiantes.</p>
+          </div>
+        </div>
       </header>
-
       {rows.length === 0 ? (
         <p className="text-sm text-gray-600">No hay sugerencias.</p>
       ) : (

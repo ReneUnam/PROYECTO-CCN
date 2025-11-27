@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/toast/ToastProvider";
 import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import {
@@ -29,11 +29,15 @@ export function AdminJournalMonitorPage() {
     const confirm = useConfirm();
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<Row[]>([]);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [selectAll, setSelectAll] = useState(false);
     const [type, setType] = useState<JournalType | "all">("all");
     const [status, setStatus] = useState<"draft" | "completed" | "all">("all");
     const [from, setFrom] = useState<string>("");
     const [to, setTo] = useState<string>("");
     const [search, setSearch] = useState("");
+    const fromRef = useRef<HTMLInputElement | null>(null);
+    const toRef = useRef<HTMLInputElement | null>(null);
     const [selected, setSelected] = useState<any | null>(null);
     const [openAnswers, setOpenAnswers] = useState<any | null>(null);
     const [fetchingAnswers, setFetchingAnswers] = useState(false);
@@ -44,15 +48,30 @@ export function AdminJournalMonitorPage() {
     const load = async () => {
         setLoading(true);
         try {
+            // If the search contains a dot, avoid sending it to the RPC because
+            // some server-side search implementations may treat punctuation
+            // specially and return no rows. In that case fetch broadly and
+            // filter on the client.
+            const rpcSearch = (search || "").includes('.') ? undefined : (search || undefined);
             const { rows } = await adminListJournalEntries({
                 type,
                 status,
                 from: from || undefined,
                 to: to || undefined,
-                search: search || undefined,
+                search: rpcSearch,
                 limit: 200,
             });
-            setRows(rows as Row[]);
+            // Apply a simple client-side substring filter so punctuation (e.g. dots) is matched
+            const fetched = (rows as Row[]) || [];
+            const s = (search || "").trim().toLowerCase();
+            const filtered = s
+                ? fetched.filter((r) => {
+                      const name = (r.profile?.name || "").toLowerCase();
+                      const id = (r.profile?.identifier || "").toLowerCase();
+                      return name.includes(s) || id.includes(s);
+                  })
+                : fetched;
+            setRows(filtered);
         } finally {
             setLoading(false);
         }
@@ -65,6 +84,75 @@ export function AdminJournalMonitorPage() {
 
     const applyFilters = () => {
         load();
+    };
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (!selectAll) {
+            // select all visible rows
+            setSelectedIds(new Set(rows.map((r) => r.id)));
+            setSelectAll(true);
+        } else {
+            setSelectedIds(new Set());
+            setSelectAll(false);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        const selectedRows = rows.filter((r) => selectedIds.has(r.id));
+        const hasDraft = selectedRows.some((r) => r.status !== 'completed');
+
+        if (hasDraft) {
+            const ok = await confirm({
+                title: 'Eliminar entradas seleccionadas',
+                message: 'Una o más entradas seleccionadas no están completadas. Esto eliminará tanto las entradas completadas como los borradores. Escribe ELIMINAR para confirmar.',
+                confirmText: 'Eliminar',
+                variant: 'danger',
+                requireTextMatch: 'ELIMINAR',
+            });
+            if (!ok) return;
+        } else {
+            // simple confirm for completed-only selection
+            const ok = await confirm({
+                title: 'Eliminar entradas seleccionadas',
+                message: `Se eliminarán ${selectedIds.size} entradas completadas. ¿Continuar?`,
+                confirmText: 'Eliminar',
+                variant: 'danger',
+            });
+            if (!ok) return;
+        }
+
+        // Perform deletions in parallel and collect results
+        const ids = Array.from(selectedIds);
+        const results = await Promise.allSettled(ids.map((id) => adminDeleteEntry(id)));
+        const succeeded: string[] = [];
+        const failed: { id: string; reason: any }[] = [];
+        results.forEach((r, i) => {
+            if (r.status === 'fulfilled') succeeded.push(ids[i]);
+            else failed.push({ id: ids[i], reason: r.status === 'rejected' ? r.reason : r });
+        });
+
+        // Update rows and selection
+        if (succeeded.length) {
+            setRows((prev) => prev.filter((r) => !succeeded.includes(r.id)));
+        }
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            succeeded.forEach((id) => next.delete(id));
+            return next;
+        });
+        setSelectAll(false);
+
+        if (succeeded.length) toast.success(`${succeeded.length} entradas eliminadas`);
+        if (failed.length) toast.error(`${failed.length} eliminaciones fallaron`);
     };
 
     const openEntry = async (id: string) => {
@@ -147,18 +235,35 @@ export function AdminJournalMonitorPage() {
                         </select>
                     </div>
                     {/* Fechas */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium">Desde</label>
-                        <input type="date" className="h-9 rounded-md border border-border bg-surface px-2 text-sm" value={from} onChange={(e) => setFrom(e.target.value)} />
+                    <div
+                        className="flex flex-col gap-1 cursor-pointer"
+                        onClick={() => {
+                            // clicking the whole area focuses / opens the picker
+                            if (fromRef.current) {
+                                try { (fromRef.current as any).showPicker?.(); } catch { }
+                                fromRef.current.focus();
+                            }
+                        }}
+                    >
+                        <label htmlFor="filter-from" className="text-xs font-medium">Desde</label>
+                        <input id="filter-from" ref={fromRef} type="date" className="h-9 rounded-md border border-border bg-surface px-2 text-sm" value={from} onChange={(e) => setFrom(e.target.value)} />
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium">Hasta</label>
-                        <input type="date" className="h-9 rounded-md border border-border bg-surface px-2 text-sm" value={to} onChange={(e) => setTo(e.target.value)} />
+                    <div
+                        className="flex flex-col gap-1 cursor-pointer"
+                        onClick={() => {
+                            if (toRef.current) {
+                                try { (toRef.current as any).showPicker?.(); } catch { }
+                                toRef.current.focus();
+                            }
+                        }}
+                    >
+                        <label htmlFor="filter-to" className="text-xs font-medium">Hasta</label>
+                        <input id="filter-to" ref={toRef} type="date" className="h-9 rounded-md border border-border bg-surface px-2 text-sm" value={to} onChange={(e) => setTo(e.target.value)} />
                     </div>
                     {/* Buscar */}
                     <div className="flex flex-col gap-1 md:col-span-2">
                         <label className="text-xs font-medium">Buscar (nombre o id institucional)</label>
-                        <input placeholder="Ej: ana, ana.gutierrez" className="h-9 rounded-md border border-border bg-surface px-2 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+                        <input placeholder="Ej: ana, ana.gutierrez" inputMode="text" pattern=".*" className="h-9 rounded-md border border-border bg-surface px-2 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -173,9 +278,22 @@ export function AdminJournalMonitorPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-surface">
-                <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-medium">
-                    <span>Entradas</span>
-                    <span className="text-xs text-text/60">{resultsLabel}</span>
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-border px-4 py-3 text-sm font-medium">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button onClick={toggleSelectAll} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">{selectAll ? 'Deseleccionar' : 'Seleccionar todo'}</button>
+                        <span>Entradas</span>
+                        {selectedIds.size > 0 && <span className="text-xs text-text/60">· {selectedIds.size} seleccionadas</span>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-xs text-text/60">{resultsLabel}</span>
+                        <button
+                            onClick={handleBulkDelete}
+                            disabled={selectedIds.size === 0}
+                            className="rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
+                        >
+                            Borrar seleccionados
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -204,7 +322,16 @@ export function AdminJournalMonitorPage() {
                                             onClick={() => setSelected(r)}
                                             className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
                                         >
-                                            <td className="px-4 py-2">{r.entry_date || new Date(r.created_at).toLocaleDateString()}</td>
+                                            <td className="px-4 py-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.has(r.id)}
+                                                    onChange={(e) => { e.stopPropagation(); toggleSelect(r.id); }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="mr-2"
+                                                />
+                                                {r.entry_date || new Date(r.created_at).toLocaleDateString()}
+                                            </td>
                                             <td className="px-4 py-2">{r.profile.name || "—"}</td>
                                             <td className="px-4 py-2">{r.profile.identifier || "—"}</td>
                                             <td className="px-4 py-2">{r.type === "emotions" ? "Emocional" : "Autocuidado"}</td>
@@ -260,7 +387,8 @@ export function AdminJournalMonitorPage() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="mt-3 flex gap-2">
+                                    <div className="mt-3 flex gap-2 items-center">
+                                        <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} className="mr-2" />
                                         <button
                                             className="h-9 flex-1 rounded-md border border-border text-sm hover:bg-muted disabled:opacity-50"
                                             onClick={() => setSelected(r)}

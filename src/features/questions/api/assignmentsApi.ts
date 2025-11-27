@@ -203,3 +203,101 @@ export async function createSurveyWithQuestionsAndAssign(args: {
   if (error) throw new Error(error.message);
   return data as number; // assignment_id
 }
+
+// Admin: delete a single session (try RPC first, fallback to direct deletes)
+export async function adminDeleteSession(sessionId: string, force: boolean = false) {
+  try {
+    const { error: rpcErr } = await (supabase as any).rpc?.('admin_delete_survey_session', { p_session_id: sessionId, p_reason: null, p_force: force });
+    if (!rpcErr) {
+      // RPC succeeded — attempt client-side cleanup of any autosaves
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.includes(sessionId)) localStorage.removeItem(key);
+        }
+      } catch (e) {
+        // ignore localStorage errors
+      }
+      return true;
+    }
+    console.warn('adminDeleteSession RPC error:', rpcErr);
+  } catch (e) {
+    console.warn('adminDeleteSession RPC threw:', e);
+  }
+
+  // Fallback: delete responses then session
+  const { error: delRespErr } = await supabase.from('responses').delete().eq('session_id', sessionId);
+  if (delRespErr) throw delRespErr;
+  const { error: delSessErr } = await supabase.from('survey_sessions').delete().eq('id', sessionId);
+  if (delSessErr) throw delSessErr;
+  // Client-side cleanup of autosaves
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.includes(sessionId)) localStorage.removeItem(key);
+    }
+  } catch (e) {
+    // ignore
+  }
+  return true;
+}
+
+export async function adminDeleteSessions(sessionIds: string[], force: boolean = false) {
+  // Try RPC to delete multiple sessions at once
+  try {
+    const { data, error } = await (supabase as any).rpc?.('admin_delete_survey_sessions', { p_session_ids: sessionIds, p_reason: null, p_force: force });
+    if (!error) {
+      // Parse RPC response: array of objects { id, ok, error, info }
+      const succeeded: string[] = [];
+      const failed: { id: string; reason: any }[] = [];
+      (data || []).forEach((item: any) => {
+        if (item.ok) succeeded.push(item.id);
+        else failed.push({ id: item.id, reason: item.error ?? item });
+      });
+      // client-side cleanup of autosaves
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (sessionIds.some((s) => key.includes(s))) localStorage.removeItem(key);
+        }
+      } catch (e) {
+        // ignore localStorage errors
+      }
+      return { succeeded, failed };
+    }
+    console.warn('adminDeleteSessions RPC error:', error);
+  } catch (e) {
+    console.warn('adminDeleteSessions RPC threw:', e);
+  }
+
+  // Fallback: delete sessions individually
+  const results = await Promise.allSettled(sessionIds.map((id) => adminDeleteSession(id, force)));
+  const succeeded: string[] = [];
+  const failed: { id: string; reason: any }[] = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') succeeded.push(sessionIds[i]);
+    else failed.push({ id: sessionIds[i], reason: r.status === 'rejected' ? r.reason : r });
+  });
+  return { succeeded, failed };
+}
+
+// Admin: delete an assignment record (survey_assignments) - only use when there are no recipients/sessions
+export async function adminDeleteAssignment(assignmentId: number, force: boolean = false) {
+  try {
+    const { data, error } = await (supabase as any).rpc?.('admin_delete_assignment', {
+      p_assignment_id: assignmentId,
+      p_reason: null,
+      p_force: force,
+    });
+    if (error) throw error;
+    return data;
+  } catch (e) {
+    // Fallback: try to delete assignment only if no sessions remain (best-effort)
+    const { error } = await supabase.from('survey_assignments').delete().eq('id', assignmentId);
+    if (error) throw new Error(error.message || String(e));
+    return true;
+  }
+}

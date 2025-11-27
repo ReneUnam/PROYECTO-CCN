@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useState, type ComponentType } from "react";
+import { useState, useEffect, useRef, type ComponentType } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   Home,
@@ -35,6 +35,7 @@ type LinkItem = {
 
 export function Sidebar({ open }: SidebarProps) {
   const navigate = useNavigate();
+  const asideRef = useRef<HTMLElement | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
@@ -81,8 +82,19 @@ export function Sidebar({ open }: SidebarProps) {
     }
   }
 
+  // Keep focus out of the sidebar when it's hidden to avoid aria-hidden issues
+  useEffect(() => {
+    if (!open && asideRef.current) {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && asideRef.current.contains(active)) {
+        try { active.blur(); } catch (e) { /* ignore */ }
+      }
+    }
+  }, [open]);
+
   return (
     <aside
+      ref={asideRef}
       aria-hidden={!open}
       className={[
         base,
@@ -285,3 +297,4 @@ export function Sidebar({ open }: SidebarProps) {
     </aside>
   );
 }
+

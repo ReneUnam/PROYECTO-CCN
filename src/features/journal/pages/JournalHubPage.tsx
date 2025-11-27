@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getStreak } from "@/features/journal/api/journalApi";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
+import { NotebookPen } from "lucide-react";
 
 export function JournalHubPage() {
   const [streakEmo, setStreakEmo] = useState(0);
@@ -28,9 +29,14 @@ export function JournalHubPage() {
   return (
     <section className="mx-auto max-w-6xl space-y-6 text-text">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Elige tu diario de hoy</h1>
-          <p className="text-sm text-text/70">Comienza una nueva sesión o continúa tu hábito diario.</p>
+        <div className="mb-3 flex items-center gap-3">
+          <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
+            <NotebookPen className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold">Elige tu diario de hoy</h1>
+            <p className="text-sm text-text/70">Comienza una nueva sesión o continúa tu hábito diario.</p>
+          </div>
         </div>
       </header>
 

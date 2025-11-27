@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { useToast } from "@/components/toast/ToastProvider";
+import { Users } from "lucide-react";
 
 export default function AdminUsersPage() {
   const [initialLoading, setInitialLoading] = useState(true);
@@ -84,7 +85,7 @@ export default function AdminUsersPage() {
         // clear state so toast doesn't repeat on navigation history back
         (window.history.state && window.history.replaceState({ ...window.history.state, usr: { ...window.history.state.usr, createdName: undefined } }, "", window.location.pathname))
           && window.history.replaceState({}, "", window.location.pathname);
-      } catch {}
+      } catch { }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -229,11 +230,16 @@ export default function AdminUsersPage() {
     <section className="mx-auto max-w-6xl space-y-6 text-text">
       <header className="flex flex-col gap-4 border-b border-border pb-4">
         <div className="flex items-center justify-between gap-4 w-full">
-          <div>
+
+          <div className="mb-3 flex items-center gap-3">
+            <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
+            <Users className="h-6 w-6" />
+            </div>
             <h1 className="text-xl font-semibold">Usuarios</h1>
             <p className="mt-1 text-sm text-text/70">Listado de usuarios registrados en la plataforma.</p>
           </div>
           <div>
+
             <button
               onClick={() => navigate("/register")}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90"
@@ -314,22 +320,22 @@ export default function AdminUsersPage() {
         {/* loader shown as overlay inside the users card to avoid moving header controls */}
       </header>
 
-        {/* Deactivate / Reactivate confirmation modal */}
-        {showModal && modalUser && (
-          <>
-            <div className="fixed inset-0 grid place-items-center bg-black/40" style={{ zIndex: 2147483646 }}>
-              <div className="w-full max-w-md rounded-lg bg-[color:var(--color-surface)] p-6 shadow-lg relative border border-[var(--color-border)]" style={{ zIndex: 2147483647 }}>
-                <h3 className="text-lg font-semibold mb-2">{modalUser.is_disabled ? "Reactivar usuario" : "Dar de baja usuario"}</h3>
-                <p className="text-sm text-text/70 mb-4">¿Deseas {modalUser.is_disabled ? "reactivar" : "dar de baja"} a <strong>{`${modalUser.first_names ?? ""} ${modalUser.last_names ?? ""}`}</strong>? Esta acción puede revertirse.</p>
-                {deactivateError && <div className="text-sm text-red-600 mb-2">{deactivateError}</div>}
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { handleToggleActive(); }} disabled={deactivationLoading} className="rounded-md bg-primary px-3 py-2 text-white">{deactivationLoading ? "Procesando..." : (modalUser.is_disabled ? "Reactivar" : "Dar de baja")}</button>
-                  <button onClick={() => { setShowModal(false); setModalUser(null); setDeactivateError(undefined); }} className="rounded-md border border-[var(--color-border)] px-3 py-2 text-[color:var(--color-text)]">Cancelar</button>
-                </div>
+      {/* Deactivate / Reactivate confirmation modal */}
+      {showModal && modalUser && (
+        <>
+          <div className="fixed inset-0 grid place-items-center bg-black/40" style={{ zIndex: 2147483646 }}>
+            <div className="w-full max-w-md rounded-lg bg-[color:var(--color-surface)] p-6 shadow-lg relative border border-[var(--color-border)]" style={{ zIndex: 2147483647 }}>
+              <h3 className="text-lg font-semibold mb-2">{modalUser.is_disabled ? "Reactivar usuario" : "Dar de baja usuario"}</h3>
+              <p className="text-sm text-text/70 mb-4">¿Deseas {modalUser.is_disabled ? "reactivar" : "dar de baja"} a <strong>{`${modalUser.first_names ?? ""} ${modalUser.last_names ?? ""}`}</strong>? Esta acción puede revertirse.</p>
+              {deactivateError && <div className="text-sm text-red-600 mb-2">{deactivateError}</div>}
+              <div className="flex items-center gap-2">
+                <button onClick={() => { handleToggleActive(); }} disabled={deactivationLoading} className="rounded-md bg-primary px-3 py-2 text-white">{deactivationLoading ? "Procesando..." : (modalUser.is_disabled ? "Reactivar" : "Dar de baja")}</button>
+                <button onClick={() => { setShowModal(false); setModalUser(null); setDeactivateError(undefined); }} className="rounded-md border border-[var(--color-border)] px-3 py-2 text-[color:var(--color-text)]">Cancelar</button>
               </div>
             </div>
-          </>
-        )}
+          </div>
+        </>
+      )}
       <div className="relative rounded-xl border border-border bg-surface p-4">
         {users.length === 0 ? (
           <div className="py-8 text-center text-sm text-text/60">No se encontraron usuarios.</div>
@@ -421,15 +427,15 @@ export default function AdminUsersPage() {
                         <AvatarFallback>{(u.first_names ?? "")[0] || (u.last_names ?? "")[0] || "U"}</AvatarFallback>
                       )}
                     </Avatar>
-                      <div className="flex-1 text-[color:var(--color-text)]">
-                        <div className="flex items-center justify-between">
+                    <div className="flex-1 text-[color:var(--color-text)]">
+                      <div className="flex items-center justify-between">
                         <div className="font-medium">{`${u.first_names ?? ""} ${u.last_names ?? ""}`.trim() || "—"}</div>
                         <div>
                           {u.auth_user_id ? (
-                                <span title="Usuario con cuenta de autenticación vinculada" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-secondary)]">Activo</span>
-                              ) : (
-                                <span title="Usuario sin cuenta de autenticación" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-tertiary)]">Inactivo</span>
-                              )}
+                            <span title="Usuario con cuenta de autenticación vinculada" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-secondary)]">Activo</span>
+                          ) : (
+                            <span title="Usuario sin cuenta de autenticación" className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs font-medium text-[color:var(--color-tertiary)]">Inactivo</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-xs text-[color:var(--color-text)]/60">{u.email ?? u.id}</div>
@@ -439,7 +445,7 @@ export default function AdminUsersPage() {
                         <div className="text-[color:var(--color-text)]/70">{u.created_at ? new Date(u.created_at).toLocaleString() : "—"}</div>
                       </div>
                       <div className="mt-2 flex justify-end">
-                        { !!u.auth_user_id ? (
+                        {!!u.auth_user_id ? (
                           u.role_id !== 1 ? (
                             <button onClick={(e) => { e.stopPropagation(); setModalUser(u); setShowModal(true); setDeactivateError(undefined); }} className={`rounded-md px-3 py-1 text-sm ${u.is_disabled ? 'bg-[color:var(--color-surface)] text-[color:var(--color-secondary)] border border-[var(--color-border)] hover:bg-[color:var(--color-hover)]' : 'bg-red-600 text-white hover:bg-red-700'}`}>{u.is_disabled ? 'Reactivar' : 'Dar de baja'}</button>
                           ) : (
