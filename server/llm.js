@@ -1,6 +1,6 @@
 // Streaming contra Ollama local
 // Requiere tener el daemon Ollama corriendo y modelo descargado
-const DEFAULT_MODEL = (process.env.OLLAMA_MODEL || 'llama3:8b').trim();
+const DEFAULT_MODEL = (process.env.OLLAMA_MODEL || 'llama3:8b-instruct').trim();
 
 function buildPrompt(messages) {
   // Convierte historial en formato simple
