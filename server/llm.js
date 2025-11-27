@@ -3,8 +3,9 @@
 const DEFAULT_MODEL = (process.env.OLLAMA_MODEL || 'llama2:7b-chat').trim();
 
 function buildPrompt(messages) {
-  // Convierte historial en formato simple
-  return messages.map(m => {
+  // Limitar a los últimos 5 mensajes
+  const limited = messages.slice(-5);
+  return limited.map(m => {
     if (m.role === 'system') return `Instrucciones: ${m.content}`;
     if (m.role === 'user') return `Usuario: ${m.content}`;
     return `Asistente: ${m.content}`;
