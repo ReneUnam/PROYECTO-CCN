@@ -934,7 +934,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium opacity-90">Contraseña temporal</label>
+                  <label className="mb-2 block text-sm font-medium opacity-90">Contraseña</label>
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--color-placeholder)]">
                       <Key className="h-4 w-4" />
