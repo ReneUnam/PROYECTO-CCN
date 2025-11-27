@@ -105,13 +105,13 @@ export default function SessionSidebar({ userId, currentSessionId, onSelect, onN
   }
 
   return (
-    <aside className="w-80 bg-gradient-to-b from-gray-100 to-white p-6 flex flex-col gap-5 shadow-lg font-sans rounded-xl">
+    <aside className="w-80 bg-gradient-to-b from-gray-100 to-white dark:from-gray-900 dark:to-gray-800 p-6 flex flex-col gap-5 shadow-lg font-sans rounded-xl border dark:border-gray-700">
       <button
         onClick={onNew}
-        className="mb-3 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-base font-semibold shadow-md transition animate-popIn"
+        className="mb-3 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white text-base font-semibold shadow-md transition animate-popIn"
       >+ Nueva conversación</button>
-      <div className="font-semibold text-gray-800 mb-3 text-lg">Tus sesiones</div>
-      {loading ? <div className="text-sm text-gray-500">Cargando...</div> : null}
+      <div className="font-semibold text-gray-800 dark:text-gray-100 mb-3 text-lg">Tus sesiones</div>
+      {loading ? <div className="text-sm text-gray-500 dark:text-gray-400">Cargando...</div> : null}
       <ul className="flex-1 overflow-auto space-y-3">
         {sessions.map(s => {
           const active = s.id === currentSessionId;
@@ -124,9 +124,9 @@ export default function SessionSidebar({ userId, currentSessionId, onSelect, onN
                 aria-pressed={active}
                 title={title}
                 className={`group w-full text-left rounded-2xl px-4 py-3 border flex items-center gap-3 shadow-md transition focus:outline-none focus:ring-2 focus:ring-indigo-400 font-sans
-                  ${active ? 'border-indigo-500 bg-white shadow-lg' : 'border-transparent bg-gray-100 hover:bg-indigo-50'}`}
+                  ${active ? 'border-indigo-500 bg-white dark:bg-gray-800 shadow-lg' : 'border-transparent bg-gray-100 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900'}`}
               >
-                <span className="text-base font-semibold text-gray-900 truncate" title={title}>{title}</span>
+                <span className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate" title={title}>{title}</span>
                 {s.dominant_emotion && (
                   <span
                     className="text-[11px] px-3 py-[3px] rounded-full border font-semibold shadow-sm"
@@ -138,7 +138,7 @@ export default function SessionSidebar({ userId, currentSessionId, onSelect, onN
             </li>
           );
         })}
-        {sessions.length === 0 && !loading ? <li className="text-sm text-gray-400">No tienes sesiones previas.</li> : null}
+        {sessions.length === 0 && !loading ? <li className="text-sm text-gray-400 dark:text-gray-500">No tienes sesiones previas.</li> : null}
       </ul>
     </aside>
   );
