@@ -53,9 +53,13 @@ export async function streamLLM(messages, onToken) {
         const obj = JSON.parse(line);
         if (obj.response) {
           // Log de depuración para ver tokens reales del modelo
-          console.log('[llm-token]', JSON.stringify(obj.response));
-          onToken(obj.response);
-          full += obj.response;
+          let clean = obj.response;
+          if (clean.startsWith('Asistente:')) {
+            clean = clean.replace(/^Asistente:\s*/, '');
+          }
+          console.log('[llm-token]', JSON.stringify(clean));
+          onToken(clean);
+          full += clean;
         }
       } catch (_) {
         /* ignorar */
