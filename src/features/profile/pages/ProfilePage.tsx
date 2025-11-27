@@ -6,6 +6,8 @@ import ReactDOM from 'react-dom';
 import Cropper from 'react-easy-crop';
 import Modal from 'react-modal';
 import { supabase } from '@/core/api/supabaseClient';
+import { getJournalHistory } from '@/features/journal/api/journalApi';
+import { useProfileSummary } from '@/features/profile/hooks/useProfileSummary';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
 // Utilidad para extraer el nombre del archivo de la URL pública de Supabase
 function getFileNameFromUrl(url: string) {
@@ -15,6 +17,7 @@ function getFileNameFromUrl(url: string) {
 
 export function ProfilePage() {
     const { user, loading } = useAuth();
+    const [grade, setGrade] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -32,6 +35,24 @@ export function ProfilePage() {
         if (!user) return;
         setAvatarUrl(user.avatar_url || null);
         setPreviewUrl(null);
+        // fetch grade from profile
+        (async () => {
+            try {
+                // try direct select of 'grade' (if column exists)
+                const { data, error } = await supabase.from('profiles').select('grade').eq('id', user.id).maybeSingle();
+                if (!error && data) {
+                    setGrade((data as any).grade ?? null);
+                    return;
+                }
+                // fallback: select the full profile and try to read grade or grade_id
+                const { data: full, error: fullErr } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+                if (!fullErr && full) {
+                    setGrade((full as any).grade ?? (full as any).grade_id ?? null);
+                }
+            } catch (err) {
+                console.error('fetch profile grade error', err);
+            }
+        })();
     }, [user]);
 
 
@@ -156,7 +177,32 @@ export function ProfilePage() {
     }, []);
 
 
-    if (loading || !user) return <FullScreenLoader />;
+    const summary = useProfileSummary();
+    const [recentHistory, setRecentHistory] = useState<any[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (!user) return;
+        (async () => {
+            setHistoryLoading(true);
+            try {
+                // Fetch last few entries from both 'emotions' and 'self-care'
+                const emos = await getJournalHistory('emotions', 10).catch(() => []);
+                const self = await getJournalHistory('self-care', 10).catch(() => []);
+                const merged = [...(emos || []), ...(self || [])]
+                    .map((r: any) => ({ ...r, parsedDate: r.entry_date || r.completed_at || r.created_at }))
+                    .sort((a: any, b: any) => (new Date(b.parsedDate).getTime() - new Date(a.parsedDate).getTime()));
+                setRecentHistory(merged.slice(0, 20));
+            } catch (err) {
+                console.error('load history error', err);
+            } finally {
+                setHistoryLoading(false);
+            }
+        })();
+    }, [user]);
+
+    if (loading || !user || summary.loading) return <FullScreenLoader />;
 
     return (
         <>
@@ -341,36 +387,51 @@ export function ProfilePage() {
 
                 <div className="grid gap-4 md:grid-cols-3">
                     <article className="rounded-2xl border border-border bg-surface p-4">
-                        <h2 className="text-sm font-semibold">Contacto</h2>
+                        <h2 className="text-sm font-semibold">Información</h2>
                         <ul className="mt-3 space-y-2 text-sm text-text/70">
                             <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> {user.email || '—'}</li>
+                            <li className="flex items-center gap-2">Grado: <span className="font-semibold ml-2">{grade ?? '—'}</span></li>
                         </ul>
                     </article>
 
                     <article className="rounded-2xl border border-border bg-surface p-4">
                         <h2 className="text-sm font-semibold">Estado actual</h2>
-                        <div className="mt-3 space-y-3 text-sm">
+                                <div className="mt-3 space-y-3 text-sm">
                             <div className="flex items-center justify-between">
-                                <span className="inline-flex items-center gap-1 text-text/70">
-                                    Bienestar promedio
-                                </span>
-                                <span className="font-semibold text-emerald-600">4.3 / 5</span>
+                                <span className="inline-flex items-center gap-1 text-text/70">Bienestar promedio</span>
+                                <span className="font-semibold text-emerald-600">{summary.wellbeingAvg != null ? `${Number(summary.wellbeingAvg).toFixed(1)} / 5` : '—'}</span>
                             </div>
                             <div>
-                                <p className="text-xs text-text/60">Última actualización hoy 10:15</p>
+                                <p className="text-xs text-text/60">Última actualización {summary.lastUpdate ? new Date(summary.lastUpdate).toLocaleString() : '—'}</p>
                                 <div className="mt-2 h-2 rounded-full bg-muted">
-                                    <div className="h-full w-[70%] rounded-full bg-primary" />
+                                    <div className="h-full rounded-full bg-primary" style={{ width: summary.wellbeingAvg ? `${Math.round((Number(summary.wellbeingAvg) / 5) * 100)}%` : '0%' }} />
                                 </div>
                             </div>
+                            <div className="flex items-center gap-3 text-sm">
+                                <div className="text-text/70">Racha emocional:</div>
+                                <div className="font-semibold">{summary.streakEmo ?? 0} días</div>
+                                <div className="text-text/70">· Autocuidado:</div>
+                                <div className="font-semibold">{summary.streakSelf ?? 0} días</div>
+                            </div>
+                            {/* Emotions summary removed from 'Estado actual' as redundant; it is shown below in 'Resumen emocional' */}
                         </div>
                     </article>
 
                     <article className="rounded-2xl border border-border bg-surface p-4">
                         <h2 className="text-sm font-semibold">Próximos pasos</h2>
-                        <ul className="mt-3 space-y-2 text-sm text-text/70">
-                            <li className="rounded-lg bg-muted/70 px-3 py-2">Completa el diario emocional de hoy</li>
-                            <li className="rounded-lg bg-muted/70 px-3 py-2">2 preguntas abiertas pendientes</li>
-                        </ul>
+                        <div className="mt-3 space-y-2 text-sm text-text/70">
+                            {!summary.hasJournalToday && (
+                                <div className="rounded-lg bg-muted/70 px-3 py-2">Completa el diario emocional de hoy</div>
+                            )}
+                            {summary.pendingAssignments ? (
+                                <div className="rounded-lg bg-muted/70 px-3 py-2">Tienes {summary.pendingAssignments} asignación(es) pendientes</div>
+                            ) : (
+                                <div className="rounded-lg bg-muted/70 px-3 py-2">No tienes asignaciones pendientes</div>
+                            )}
+                            {summary.answeredToday === 0 && (
+                                <div className="rounded-lg bg-muted/70 px-3 py-2">No respondiste preguntas hoy</div>
+                            )}
+                        </div>
                     </article>
                 </div>
 
@@ -382,24 +443,37 @@ export function ProfilePage() {
                         </div>
                         <button className="text-xs text-primary hover:underline">Ver estadísticas</button>
                     </header>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                        <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
-                            <h3 className="font-medium">Emociones predominantes</h3>
-                            <ul className="mt-2 space-y-1 text-text/70">
-                                <li>😊 Alegría · 42%</li>
-                                <li>😔 Culpa · 18%</li>
-                                <li>😬 Inquieto · 16%</li>
-                            </ul>
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                            <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
+                                <h3 className="font-medium">Emociones predominantes</h3>
+                                <ul className="mt-2 space-y-1 text-text/70">
+                                    {summary.emotions && summary.emotions.length > 0 ? (
+                                        summary.emotions.map((e) => (
+                                            <li key={e.name} className="flex items-center gap-2">
+                                                {e.emoji && <span>{e.emoji}</span>}
+                                                <span>{`${e.name} · ${e.pct}%`}</span>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li>No hay datos suficientes</li>
+                                    )}
+                                </ul>
+                            </div>
+                            <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
+                                <h3 className="font-medium">Autocuidado</h3>
+                                <ul className="mt-2 space-y-1 text-text/70">
+                                    <li>
+                                        Energía física: {summary.energyLabel ? `${summary.energyLabel} (${summary.energyAvg != null ? Number(summary.energyAvg).toFixed(1) : '—'})` : '—'}
+                                    </li>
+                                    <li>
+                                        Sueño: {typeof summary.sleepCount === 'number' ? `dormí suficiente ${summary.sleepCount} veces` : '—'}
+                                    </li>
+                                    <li>
+                                        Actividad: {typeof summary.activityCount === 'number' ? `ejercicio ${summary.activityCount} veces` : '—'}
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-                        <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
-                            <h3 className="font-medium">Autocuidado</h3>
-                            <ul className="mt-2 space-y-1 text-text/70">
-                                <li>Energía física: alta (4.0)</li>
-                                <li>Sueño: dormí suficiente 5 veces</li>
-                                <li>Actividad: ejercicio 3 veces</li>
-                            </ul>
-                        </div>
-                    </div>
                 </section>
 
                 <section className="rounded-2xl border border-border bg-surface p-4">
@@ -408,22 +482,47 @@ export function ProfilePage() {
                             <h2 className="text-sm font-semibold">Historial reciente</h2>
                             <p className="text-xs text-text/70">Últimas interacciones en la plataforma</p>
                         </div>
-                        <button className="text-xs text-primary hover:underline">Ver todo</button>
+                        <button className="text-xs text-primary hover:underline" onClick={() => setHistoryModalOpen(true)}>Ver todo</button>
                     </header>
                     <div className="mt-4 divide-y divide-border text-sm text-text/70">
-                        <div className="flex items-center justify-between py-3">
-                            <span>Diario de autocuido completado</span>
-                            <span className="text-xs text-text/60">Hoy · 10:05</span>
-                        </div>
-                        <div className="flex items-center justify-between py-3">
-                            <span>Pregunta “¿Cómo te sentiste hoy?” enviada</span>
-                            <span className="text-xs text-text/60">Ayer · 18:40</span>
-                        </div>
-                        <div className="flex items-center justify-between py-3">
-                            <span>Objetivo “Dormir 8h” marcado como cumplido</span>
-                            <span className="text-xs text-text/60">26 oct · 21:15</span>
-                        </div>
+                        {historyLoading && <div className="py-3">Cargando…</div>}
+                        {!historyLoading && recentHistory.length === 0 && (
+                            <div className="py-3">No hay actividad reciente</div>
+                        )}
+                        {!historyLoading && recentHistory.slice(0,3).map((h) => (
+                            <div key={h.id} className="flex items-center justify-between py-3">
+                                <span>{h.type === 'emotions' ? 'Diario emocional' : 'Diario de autocuido'}{h.status === 'draft' ? ' (borrador)' : ''}</span>
+                                <span className="text-xs text-text/60">{h.entry_date ? new Date(h.entry_date).toLocaleString() : (h.completed_at ? new Date(h.completed_at).toLocaleString() : new Date(h.created_at).toLocaleString())}</span>
+                            </div>
+                        ))}
                     </div>
+
+                    {/* Historial completo modal */}
+                    <Modal
+                        isOpen={historyModalOpen}
+                        onRequestClose={() => setHistoryModalOpen(false)}
+                        ariaHideApp={false}
+                        style={{
+                            overlay: { zIndex: 1000, background: 'rgba(30,30,40,0.65)' },
+                            content: { inset: '10% 10%', borderRadius: 12 }
+                        }}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold">Historial completo</h3>
+                            <button className="text-sm text-primary" onClick={() => setHistoryModalOpen(false)}>Cerrar</button>
+                        </div>
+                        <div className="overflow-auto h-[60vh] divide-y divide-border text-sm">
+                            {recentHistory.map((h) => (
+                                <div key={h.id} className="flex items-center justify-between py-3">
+                                    <div className="mr-4">
+                                        <div className="font-medium">{h.type === 'emotions' ? 'Diario emocional' : 'Diario de autocuido'}</div>
+                                        <div className="text-text/70 text-xs">{h.status === 'completed' ? 'Completado' : h.status}</div>
+                                    </div>
+                                    <div className="text-xs text-text/60">{h.entry_date ? new Date(h.entry_date).toLocaleString() : (h.completed_at ? new Date(h.completed_at).toLocaleString() : new Date(h.created_at).toLocaleString())}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </Modal>
                 </section>
             </section>
         </>

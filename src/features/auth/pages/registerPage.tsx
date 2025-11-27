@@ -17,17 +17,20 @@ export function RequireAdmin({ children }: { children: JSX.Element }) {
 }
 
 export default function RegisterPage() {
+  const toast = useToast();
   const [institutionId, setInstitutionId] = useState('');
   const [firstNames, setFirstNames] = useState('');
   const [lastNames, setLastNames] = useState('');
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState(3); // 2=teacher, 3=student
+  const [grade, setGrade] = useState('');
   const [tempPassword, setTempPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleCreateUser() {
     try {
+      // clear previous errors
       setMsg('');
       setIsLoading(true);
 
@@ -52,6 +55,10 @@ export default function RegisterPage() {
         setMsg('Todos los campos son obligatorios');
         return;
       }
+      if (Number(roleId) === 3 && !grade) {
+        setMsg('Selecciona el grado para estudiantes');
+        return;
+      }
       if (![2, 3].includes(Number(roleId))) {
         setMsg('El rol Admin no se crea desde aquí.');
         return;
@@ -64,19 +71,16 @@ export default function RegisterPage() {
         p_last_names: lastNames.trim(),
         p_email: email.trim(),
         p_role_id: Number(roleId), // 2 o 3
-        p_grade: null,
+        p_grade: grade ? grade.trim() : null,
         p_temp_password: tempPassword.trim(),
       });
 
       if (error) throw error;
 
       const createdName = `${firstNames} ${lastNames}`.trim();
-      setMsg(`Usuario creado. Contraseña temporal: ${tempPassword}`);
+      // show toast for success (do NOT set inline error message)
       toast.success(`Usuario creado: ${createdName}`);
-      // success animation trigger
-      setSaved(true);
-      setTimeout(() => setSaved(false), 900);
-      // clear inputs and redirect to admin users after short delay
+      // clear inputs after short delay (do NOT navigate)
       setTimeout(() => {
         setInstitutionId('');
         setFirstNames('');
@@ -84,7 +88,7 @@ export default function RegisterPage() {
         setEmail('');
         setTempPassword('');
         setRoleId(3);
-        navigate('/admin/users', { state: { createdName } });
+        setGrade('');
       }, 700);
     } catch (err: any) {
       // Muestra detalle útil cuando venga 403/401
@@ -96,13 +100,11 @@ export default function RegisterPage() {
     }
   }
 
-  const toast = useToast();
-  const [saved, setSaved] = useState(false);
   const navigate = useNavigate();
 
   return (
     <div className="flex items-start justify-center px-4 py-4">
-      <Card className={`mt-4 w-full max-w-2xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform ${saved ? 'scale-105 shadow-lg' : ''}`}>
+      <Card className={`mt-4 w-full max-w-2xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform`}>
         <CardContent className="p-6 sm:p-8">
           <div className="mx-auto w-full">
             <div className="mb-4">
@@ -148,10 +150,25 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium opacity-90">Rol</label>
-                  <select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)] placeholder:text-[color:var(--color-placeholder)]">
+                  <select value={roleId} onChange={(e) => { const v = Number(e.target.value); setRoleId(v); if (v !== 3) setGrade(''); }} className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)] placeholder:text-[color:var(--color-placeholder)]">
                     <option value={2}>Teacher</option>
                     <option value={3}>Student</option>
                   </select>
+                  {Number(roleId) === 3 && (
+                    <div className="mt-3">
+                      <label className="mb-2 block text-sm font-medium opacity-90">Grado</label>
+                      <select value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-xl border px-4 py-3 border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]">
+                        <option value="">Selecciona grado</option>
+                        <option value="7mo B">7mo B</option>
+                        <option value="7mo A">7mo A</option>
+                        <option value="8vo A">8vo A</option>
+                        <option value="8vo B">8vo B</option>
+                        <option value="9no A">9no A</option>
+                        <option value="10mo A">10mo A</option>
+                        <option value="11mo A">11mo A</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium opacity-90">Contraseña temporal</label>
