@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/toast/ToastProvider";
+import { useConfirm } from "@/components/confirm/ConfirmProvider";
 import {
     adminListJournalEntries,
     adminGetEntryWithAnswers,
     type JournalType,
+    adminDeleteEntry,
 } from "@/features/journal/api/journalApi";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { LikertScale } from "./components/LikertScale";
 import ReactDOM from "react-dom";
+import { CalendarCheck } from "lucide-react";
 
 type Row = {
     id: string;
@@ -22,7 +25,8 @@ type Row = {
 };
 
 export function AdminJournalMonitorPage() {
-        const toast = useToast();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<Row[]>([]);
     const [type, setType] = useState<JournalType | "all">("all");
@@ -76,12 +80,43 @@ export function AdminJournalMonitorPage() {
         }
     };
 
+    async function handleDeleteEntry(r: Row) {
+        const isDraft = r.status === 'draft';
+        const title = isDraft ? 'Eliminar entrada (borrador)' : 'Eliminar entrada completada';
+        const message = isDraft
+            ? 'Eliminar este borrador quitará respuestas guardadas y afectará al usuario. Esta acción no se puede deshacer. Escribe ELIMINAR para confirmar.'
+            : 'Eliminar esta entrada completada quitará el registro del estudiante. Esta acción no se puede deshacer.';
+
+        const ok = await confirm({
+            title,
+            message,
+            confirmText: 'Eliminar',
+            variant: 'danger',
+            requireTextMatch: isDraft ? 'ELIMINAR' : undefined,
+        });
+        if (!ok) return;
+
+        try {
+            await adminDeleteEntry(r.id);
+            setRows((prev) => prev.filter((x) => x.id !== r.id));
+            toast.success('Entrada eliminada');
+        } catch (e) {
+            console.error('Error deleting entry', e);
+            toast.error('No se pudo eliminar la entrada.');
+        }
+    }
+
     return (
         <section className="mx-auto max-w-7xl space-y-6 text-text px-3 md:px-0">
             <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-lg font-semibold">Monitor de diarios (Admin)</h1>
-                    <p className="text-sm text-text/70">Visualiza y filtra las sesiones de los estudiantes.</p>
+                <div className="mb-3 flex items-center gap-3">
+                    <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
+                        <CalendarCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-semibold">Monitor de diarios (Admin)</h1>
+                        <p className="text-sm text-text/70">Visualiza y filtra las sesiones de los estudiantes.</p>
+                    </div>
                 </div>
                 <button
                     className="md:hidden h-9 w-full rounded-md border border-border bg-surface text-sm hover:bg-muted"
@@ -181,13 +216,22 @@ export function AdminJournalMonitorPage() {
                                                 )}
                                             </td>
                                             <td className="px-4 py-2">
-                                                <button
-                                                    disabled={r.status !== "completed"}
-                                                    onClick={(e) => { e.stopPropagation(); openEntry(r.id); }}
-                                                    className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    Ver
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); openEntry(r.id); }}
+                                                        className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+                                                        disabled={r.status !== "completed"}
+                                                    >
+                                                        Ver
+                                                    </button>
+                                                    <button
+                                                        title={r.status === 'draft' ? 'Eliminar (borrador)' : 'Eliminar entrada'}
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteEntry(r); }}
+                                                        className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
+                                                    >
+                                                        Borrar
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -229,6 +273,13 @@ export function AdminJournalMonitorPage() {
                                             disabled={r.status !== "completed"}
                                         >
                                             Ver respuestas
+                                        </button>
+                                        <button
+                                            className="h-9 flex-none rounded-md border border-red-200 bg-red-50 px-3 text-sm text-red-600 hover:bg-red-100"
+                                            onClick={() => handleDeleteEntry(r)}
+                                            title={r.status === 'draft' ? 'Eliminar (borrador)' : 'Eliminar entrada'}
+                                        >
+                                            Borrar
                                         </button>
                                     </div>
                                 </li>

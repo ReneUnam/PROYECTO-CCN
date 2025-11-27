@@ -149,6 +149,29 @@ export default function RegisterPage() {
     }
   }
 
+  // Merge parsed items into the batch, avoiding duplicates by institutionId.
+  function addUniqueToBatch(newItems: StudentItem[], failedList?: { row?: number; reason: string }[]) {
+    setBatch((prev) => {
+      const exist = new Set(prev.map((x) => String(x.institutionId || '').trim().toLowerCase()));
+      const additions: StudentItem[] = [];
+      for (const item of newItems) {
+        const id = String(item.institutionId || '').trim().toLowerCase();
+        if (!id) {
+          if (failedList) failedList.push({ row: 0, reason: 'ID vacío' });
+          continue;
+        }
+        if (exist.has(id)) {
+          if (failedList) failedList.push({ row: 0, reason: 'ID duplicado' });
+          continue;
+        }
+        exist.add(id);
+        additions.push(item);
+      }
+      if (additions.length > 0) setIsDirty(true);
+      return [...prev, ...additions];
+    });
+  }
+
   async function ensureAdmin(): Promise<boolean> {
     const { data: s } = await supabase.auth.getUser();
     if (!s.user) {
@@ -195,6 +218,12 @@ export default function RegisterPage() {
       tempPassword: tempPassword.trim(),
     };
 
+    // Avoid duplicates
+    const exists = batch.some((x) => String(x.institutionId || '').trim().toLowerCase() === String(item.institutionId || '').trim().toLowerCase());
+    if (exists) {
+      toast.warning('Ya existe un estudiante con ese ID en la lista.');
+      return;
+    }
     setBatch((b) => [...b, item]);
 
     // clear student-specific fields but keep institution (optional)
@@ -366,9 +395,18 @@ export default function RegisterPage() {
             const parsed: StudentItem[] = data.parsed ?? [];
             const failed: any[] = data.failed ?? [];
             if (parsed.length) {
-              setBatch((prev) => [...prev, ...parsed]);
-              setIsDirty(true);
-              toast.success(`Se importaron ${parsed.length} estudiantes a la lista.`);
+              // Deduplicate against existing batch and within parsed
+              const beforeCount = batch.length;
+              const dedupFailed: { row?: number; reason: string }[] = [];
+              addUniqueToBatch(parsed, dedupFailed);
+              const added = Math.max(0, parsed.length - dedupFailed.length);
+              if (added > 0) {
+                toast.success(`Se importaron ${added} estudiantes a la lista.`);
+              }
+              if (dedupFailed.length > 0) {
+                toast.warning(`${dedupFailed.length} filas omitidas por ID duplicado u otros errores.`);
+                console.warn('Filas omitas por duplicado:', dedupFailed.slice(0, 20));
+              }
             }
             if (failed.length) {
               toast.warning(`${failed.length} filas omitidas por errores. Revisa el formato del archivo.`);
@@ -460,6 +498,8 @@ export default function RegisterPage() {
 
       const parsed: StudentItem[] = [];
       const failed: { row: number; reason: string }[] = [];
+      const existingIds = new Set(batch.map((b) => String(b.institutionId || '').trim().toLowerCase()));
+      const seenIds = new Set<string>();
 
       // Note: normMap and normalizeHeader are already defined above for streaming parse
 
@@ -522,7 +562,10 @@ export default function RegisterPage() {
           failed.push({ row: i + 2, reason: 'Faltan campos obligatorios' });
         } else if (!String(em).includes('@')) {
           failed.push({ row: i + 2, reason: 'Correo inválido' });
+        } else if (existingIds.has(inst.toLowerCase()) || seenIds.has(inst.toLowerCase())) {
+          failed.push({ row: i + 2, reason: 'ID duplicado' });
         } else {
+          seenIds.add(inst.toLowerCase());
           parsed.push({ institutionId: inst, firstNames: fn, lastNames: ln, email: em, grade: gr, tempPassword: tp });
         }
         // update progress frequently - at least when small CHUNK or at multiples
@@ -540,9 +583,16 @@ export default function RegisterPage() {
       // final update
       if (!parseAbortRef.current) setParseProgress(Math.max(1, total));
       if (parsed.length) {
-        setBatch((prev) => [...prev, ...parsed]);
-        setIsDirty(true);
-        toast.success(`Se importaron ${parsed.length} estudiantes a la lista.`);
+        const dedupFailures: { row?: number; reason: string }[] = [];
+        // merge parsed into batch, recording any additional failures
+        addUniqueToBatch(parsed, dedupFailures);
+        // build summary messages
+        const added = parsed.length - dedupFailures.length;
+        if (added > 0) toast.success(`Se importaron ${added} estudiantes a la lista.`);
+        if (dedupFailures.length > 0) {
+          toast.warning(`${dedupFailures.length} filas omitidas por ID duplicado u otros errores.`);
+          console.warn('Filas omitidas por duplicado:', dedupFailures.slice(0, 20));
+        }
       }
       if (failed.length) {
         toast.warning(`${failed.length} filas omitidas por errores. Revisa el formato del archivo.`);
@@ -678,9 +728,14 @@ export default function RegisterPage() {
       });
 
       if (parsed.length) {
-        setBatch((prev) => [...prev, ...parsed]);
-        setIsDirty(true);
-        toast.success(`Se importaron ${parsed.length} estudiantes a la lista.`);
+        const dedupFailures: { row?: number; reason: string }[] = [];
+        addUniqueToBatch(parsed, dedupFailures);
+        const added = parsed.length - dedupFailures.length;
+        if (added > 0) toast.success(`Se importaron ${added} estudiantes a la lista.`);
+        if (dedupFailures.length > 0) {
+          toast.warning(`${dedupFailures.length} filas omitidas por ID duplicado u otros errores.`);
+          console.warn('Filas omitidas por duplicado:', dedupFailures.slice(0, 20));
+        }
       }
       if (failed.length) {
         toast.warning(`${failed.length} filas omitidas por errores. Revisa el formato del archivo.`);
@@ -780,11 +835,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex items-start justify-center px-4 py-4">
-      <Card className={`mt-4 w-full max-w-5xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform`}>
-        <CardContent className="p-8 sm:p-10">
+    <div className="flex items-start justify-center px-4 py-2">
+      <Card className={`mt-3 w-full max-w-5xl overflow-hidden rounded-2xl border shadow-md border-[var(--color-border)] bg-[color:var(--color-surface)] transition-transform`}>
+        <CardContent className="p-6 sm:p-8">
           <div className="mx-auto w-full" ref={headerRef}>
-            <div className="mb-4">
+            <div className="mb-2">
               <button
                 onClick={() => navigate('/admin/users')}
                 className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-text)] hover:bg-[color:var(--color-muted)]"
@@ -795,7 +850,12 @@ export default function RegisterPage() {
                 Volver
               </button>
             </div>
-            <h1 className="mb-4 text-center text-2xl font-semibold text-[color:var(--color-text)]">Crear usuario</h1>
+            <div className="mb-3 flex items-center gap-3">
+              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
+                <User className="h-5 w-5" />
+              </div>
+              <h1 className="text-2xl font-semibold text-[color:var(--color-text)]">Crear usuario</h1>
+            </div>
 
             {/* validation messages appear as toasts in top-right */}
 

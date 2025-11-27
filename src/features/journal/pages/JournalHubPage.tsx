@@ -43,7 +43,7 @@ export function JournalHubPage() {
                 <h2 className="text-base font-semibold">{card.title}</h2>
                 <p className="text-sm text-text/70">{card.description}</p>
                 <div className="text-xs">
-                  <span className="text-text/60">Racha</span> <b>{card.streak}</b> días
+                  <span className="text-text/60">🔥Constancia:</span> <b>{card.streak}</b> días
                 </div>
               </div>
             </div>

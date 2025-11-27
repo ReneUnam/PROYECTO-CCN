@@ -196,19 +196,19 @@ export function JournalAdminPage() {
 
   return (
     <section className="mx-auto max-w-6xl space-y-6 text-text">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[color:var(--color-primary)] text-white shadow-sm" aria-hidden="true">
             <NotebookPen className="h-5 w-5" />
           </div>
-          <div>
+          <div className="w-full sm:w-auto text-center sm:text-left">
             <h1 className="text-lg font-semibold">Administración del diario</h1>
             <p className="text-sm text-text/70">Edita preguntas y publica la versión activa</p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <select
-            className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm transition
+            className="inline-flex items-center gap-1 w-full sm:w-auto rounded-md border border-border bg-surface px-3 py-2 text-sm transition
              hover:bg-muted hover:shadow-sm active:scale-[0.97] hover:cursor-pointer"
             value={selectedForm?.id ?? ""}
             onChange={(e) => setSelectedForm(forms.find((f) => f.id === Number(e.target.value)))}
@@ -219,14 +219,14 @@ export function JournalAdminPage() {
               </option>
             ))}
           </select>
-          <button onClick={onClone} className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm transition
+           <button onClick={onClone} className="inline-flex justify-center items-center gap-1 w-full sm:w-auto rounded-md border border-border bg-surface px-3 py-2 text-sm transition
              hover:bg-muted hover:shadow-sm active:scale-[0.97] hover:cursor-pointer">
             <Copy className="mr-1 inline h-4 w-4" /> Nueva versión (borrador)
           </button>
           <button
             onClick={onPublish}
             disabled={!selectedVersion || selectedVersion.status === "published"}
-            className="rounded-md bg-primary px-3 py-2 text-sm text-white transition hover:bg-primary/90 hover:shadow-md active:scale-[0.97] disabled:opacity-60 hover:cursor-pointer">
+            className="rounded-md bg-primary w-full sm:w-auto px-3 py-2 text-sm text-white transition hover:bg-primary/90 hover:shadow-md active:scale-[0.97] disabled:opacity-60 hover:cursor-pointer">
             Publicar versión
           </button>
         </div>

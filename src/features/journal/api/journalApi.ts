@@ -494,4 +494,37 @@ export async function adminGetEntryWithAnswers(entryId: string) {
   return rpc;
 }
 
+export async function adminDeleteEntry(entryId: string) {
+  // Prefer server RPC first (returns audit + avoids PostgREST 406 on delete).
+  // If RPC is not present or fails, fall back to direct delete.
+  try {
+    const { data, error: rpcErr } = await (supabase as any).rpc('admin_delete_journal_entry', { p_entry_id: entryId });
+    if (!rpcErr) {
+      try {
+        localStorage.removeItem(`journal:entry:${entryId}`);
+        localStorage.removeItem(`journal:answers:${entryId}`);
+      } catch { }
+      return data;
+    }
+    // if RPC returned an error, log and continue to fallback
+    console.warn('adminDeleteEntry RPC error:', rpcErr);
+  } catch (e) {
+    console.warn('adminDeleteEntry RPC threw:', e);
+  }
+
+  // Fallback: direct delete (may be blocked by RLS for non-admins)
+  const { data: deleted, error: directErr } = await supabase
+    .from('journal_entries')
+    .delete()
+    .eq('id', entryId)
+    .select('id')
+    .maybeSingle();
+  if (directErr) throw directErr;
+  try {
+    localStorage.removeItem(`journal:entry:${entryId}`);
+    localStorage.removeItem(`journal:answers:${entryId}`);
+  } catch { }
+  return deleted;
+}
+
 
