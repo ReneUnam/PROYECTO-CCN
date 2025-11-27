@@ -25,12 +25,19 @@ export async function streamLLM(messages, onToken) {
     }
   };
 
+  // Log para depuración
+  console.log('[OLLAMA] Modelo:', body.model);
+  console.log('[OLLAMA] Body:', JSON.stringify(body));
+
   const res = await fetch('http://localhost:11434/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if (!res.ok || !res.body) throw new Error(`Ollama fallo: ${res.status}`);
+  if (!res.ok || !res.body) {
+    console.error('[OLLAMA] Error status:', res.status);
+    throw new Error(`Ollama fallo: ${res.status}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
