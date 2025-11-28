@@ -55,34 +55,39 @@ export default function WelcomePage() {
   return (
     <div className="w-full min-h-screen bg-surface text-text py-8 px-4 md:px-8 lg:px-12 relative overflow-hidden">
       {/* Navbar réplica dentro de la página */}
-      <div className="w-full max-w-7xl mx-auto flex items-center justify-between py-3 md:py-4 px-4 md:px-6 z-20">
+      <div className="w-full max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between py-3 md:py-4 px-4 md:px-6 z-20 space-y-3 sm:space-y-0">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
             <img src={ccnLogo} alt="CCN logo" className="w-full h-full object-cover" />
           </div>
           <div className="leading-tight">
-            <div className="text-lg font-bold text-text">Colegio Central de Nicaragua</div>
-            <div className="text-sm text-text/70">CCN- BLUEWEB</div>
+            <div className="text-base sm:text-lg font-bold text-text">Colegio Central de Nicaragua</div>
+            <div className="text-xs sm:text-sm text-text/70">CCN- BLUEWEB</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button
-            size="sm"
-            className="px-2 py-1 sm:px-3 sm:py-1 rounded-md border border-border text-text bg-transparent text-sm sm:text-base shadow-sm"
-            onClick={() => {
-              try {
-                const accepted = localStorage.getItem('terms:accepted') === '1';
-                if (accepted) navigate('/login');
-                else navigate('/terms');
-              } catch (e) {
-                navigate('/terms');
-              }
-            }}
-          >
-            Iniciar sesión
-          </Button>
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+          <div className="w-full sm:w-auto">
+            <Button
+              size="sm"
+              className="w-full sm:w-auto px-3 py-2 sm:px-3 sm:py-1 rounded-md border border-border text-text bg-transparent text-sm sm:text-base shadow-sm"
+              onClick={() => {
+                try {
+                  const accepted = localStorage.getItem('terms:accepted') === '1';
+                  if (accepted) navigate('/login');
+                  else navigate('/terms');
+                } catch (e) {
+                  navigate('/terms');
+                }
+              }}
+            >
+              Iniciar sesión
+            </Button>
+          </div>
+
+          <div className="flex-shrink-0">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
