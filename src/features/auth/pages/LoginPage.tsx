@@ -98,7 +98,6 @@ export default function LoginPage() {
                                         value={studentId}
                                         onChange={(e) => setStudentId(e.target.value)}
                                         placeholder="Ej: 2025001"
-                                        inputMode="numeric"
                                         autoComplete="username"
                                         autoFocus
                                         className="w-full rounded-xl border px-4 py-3
