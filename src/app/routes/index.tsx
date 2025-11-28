@@ -7,7 +7,7 @@ import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { QuestionsPage } from "@/features/questions/pages/QuestionsPage";
 import MaterialsList from '@/features/materials/pages/MaterialsList';
 import { Layout } from "@/core/components/Layout";
-import { RequireAuth, RequireAdmin } from "./route-guards";
+import { RequireAuth, RequireAdmin, RequireTerms } from "./route-guards";
 import { AssignmentSessionPage } from "@/features/questions/pages/AssignmentSessionPage";
 import { JournalHubPage } from "@/features/journal/pages/JournalHubPage";
 import { JournalEmotionSessionPage } from "@/features/journal/pages/sessions/JournalEmotionSessionPage";
@@ -29,49 +29,51 @@ import ChatWindow from "@/features/chatbot/components/ChatWindow";
 import AdminPanel from '@/features/admin';
 
 const router = createBrowserRouter([
-  
-  // Públicas
-  { path: '/', element: <WelcomePage /> },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/terms', element: <TermsAndConditions /> },
-  { path: '/auth/confirm-email', element: <ConfirmEmailPage /> },
-  { path: '/auth/verify-email', element: <VerifyEmailPage /> },
-
-  // Rutas privadas (requiere sesión)
   {
-    element: <RequireAuth />,
+    element: <RequireTerms />,
     children: [
-      {
-        element: <Layout />,
-        children: [
-          { path: "/dashboard", element:<DashboardPage /> },
-          { path: "/resources", element: <MaterialsList /> },
-          { path: "/profile", element: <ProfilePage /> },
-          { path: "/questions", element: <QuestionsPage /> },
-          { path: "/questions/session/:assignmentId", element: <AssignmentSessionPage /> },
-          { path: "/journal", element: <JournalHubPage /> },
-          // { path: "/journal/emotions", element: <JournalTypePage type="emotions" /> },
-          // { path: "/journal/self-care", element: <JournalTypePage type="self-care" /> },
-          { path: "/journal/session/emotions", element: <JournalEmotionSessionPage /> },
-          { path: "/journal/session/self-care", element: <JournalSelfCareSessionPage /> },
-          { path: "/journal/emotions", element: <JournalEmotionPage /> },
-          { path: "/journal/self-care", element: <JournalSelfCarePage /> },
-          { path: "/forum", element: <MailboxPage /> },
-          { path: "/chatbot", element: <ChatWindow /> },
+      // Públicas
+      { path: '/', element: <WelcomePage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/terms', element: <TermsAndConditions /> },
+      { path: '/auth/confirm-email', element: <ConfirmEmailPage /> },
+      { path: '/auth/verify-email', element: <VerifyEmailPage /> },
 
-          // Solo administradores
+      // Rutas privadas (requiere sesión)
+      {
+        element: <RequireAuth />,
+        children: [
           {
-            element: <RequireAdmin />,
+            element: <Layout />,
             children: [
-              { path: "/register", element: <RegisterPage /> },
-              { path: "/admin/users", element: <AdminUsersPage /> },
-                { path: "/admin/users/:id", element: <AdminUserDetailPage /> },
-              { path: "/admin/assignments/manage", element: <AdminAssignmentsPage /> },
-              { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
-              { path: "/admin/journal", element: <JournalAdminPage /> },
-              { path: "/admin/mailbox", element: <AdminMailboxPage /> },
-              { path: "/admin/journal/monitor", element: <AdminJournalMonitorPage /> },
-              { path: "/admin/alerts", element: <AdminPanel /> },
+              { path: "/dashboard", element:<DashboardPage /> },
+              { path: "/resources", element: <MaterialsList /> },
+              { path: "/profile", element: <ProfilePage /> },
+              { path: "/questions", element: <QuestionsPage /> },
+              { path: "/questions/session/:assignmentId", element: <AssignmentSessionPage /> },
+              { path: "/journal", element: <JournalHubPage /> },
+              { path: "/journal/session/emotions", element: <JournalEmotionSessionPage /> },
+              { path: "/journal/session/self-care", element: <JournalSelfCareSessionPage /> },
+              { path: "/journal/emotions", element: <JournalEmotionPage /> },
+              { path: "/journal/self-care", element: <JournalSelfCarePage /> },
+              { path: "/forum", element: <MailboxPage /> },
+              { path: "/chatbot", element: <ChatWindow /> },
+
+              // Solo administradores
+              {
+                element: <RequireAdmin />,
+                children: [
+                  { path: "/register", element: <RegisterPage /> },
+                  { path: "/admin/users", element: <AdminUsersPage /> },
+                    { path: "/admin/users/:id", element: <AdminUserDetailPage /> },
+                  { path: "/admin/assignments/manage", element: <AdminAssignmentsPage /> },
+                  { path: "/admin/questions/dashboard", element: <AdminQuestionsDashboard /> },
+                  { path: "/admin/journal", element: <JournalAdminPage /> },
+                  { path: "/admin/mailbox", element: <AdminMailboxPage /> },
+                  { path: "/admin/journal/monitor", element: <AdminJournalMonitorPage /> },
+                  { path: "/admin/alerts", element: <AdminPanel /> },
+                ],
+              },
             ],
           },
         ],

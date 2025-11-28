@@ -9,6 +9,12 @@ export default function TermsAndConditions() {
 
 	const handleContinue = () => {
 		if (!accepted) return;
+		// Persistir aceptación para evitar bloquear el acceso al login
+		try {
+			localStorage.setItem('terms:accepted', '1');
+		} catch (e) {
+			// ignore
+		}
 		// Redirigir al login (o a donde corresponda)
 		navigate('/login');
 	};

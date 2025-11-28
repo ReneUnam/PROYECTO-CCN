@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
+import { Button } from '@/components/ui/button';
 
 type Mode = "system" | "light" | "dark";
 
@@ -50,7 +51,7 @@ export function ThemeToggle() {
 
   return (
     <div className="relative">
-      <button
+      <Button
         ref={btnRef}
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -58,11 +59,12 @@ export function ThemeToggle() {
         aria-expanded={open}
         className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-sm
                    border-[var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)]
-                   hover:bg-black/5 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]"
+                   hover:bg-[color:var(--color-muted)] dark:hover:bg-[color:var(--color-muted)] transition-colors duration-150
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)]"
       >
         <ActiveIcon className="h-4 w-4" />
         Tema
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -84,7 +86,7 @@ export function ThemeToggle() {
                 }}
                 className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm
                   ${active ? "bg-[color:var(--color-primary)]/10 text-[color:var(--color-text)]" : "text-[color:var(--color-text)]"}
-                  hover:bg-black/5 dark:hover:bg-white/10`}
+                  hover:bg-[color:var(--color-muted)] dark:hover:bg-[color:var(--color-muted)] transition-colors duration-150`}
               >
                 <Icon className="h-4 w-4" />
                 <span>{label}</span>

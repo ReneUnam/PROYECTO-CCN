@@ -9,11 +9,8 @@ import {
   Inbox,
   Bot,
   BookOpen,
-  Brain,
   BarChart3,
   CalendarCheck,
-  Settings,
-  Bell,
   LogOut,
   ChevronDown,
   ShieldCheck,
@@ -47,11 +44,7 @@ export function Sidebar({ open }: SidebarProps) {
     { label: "Buzón", path: "/forum", icon: Inbox },
     { label: "Asistente virtual", path: "/chatbot", icon: Bot, allowedRoleIds: [1, 3] },
     { label: "Recursos", path: "/resources", icon: BookOpen, allowedRoleIds: [2] },
-    { label: "Bienestar", path: "/wellness", icon: Brain },
-    { label: "Hábitos", path: "/habits", icon: CalendarCheck },
-    { label: "Estadísticas", path: "/stats", icon: BarChart3 },
-    { label: "Notificaciones", path: "/notifications", icon: Bell },
-    { label: "Configuración", path: "/settings", icon: Settings },
+    // Removed unused links: Bienestar, Hábitos, Estadísticas, Notificaciones, Configuración
   ];
 
 
