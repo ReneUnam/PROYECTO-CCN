@@ -14,42 +14,41 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    permissions:
-       id-token: write
-       contents: read
+    # No es necesario configurar permissions, ya que usas el token de SWA.
+    
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
 
-      - name: Set up Node.js 20
+      # ➡️ Puedes dejar este paso si quieres asegurar el entorno del runner, 
+      # pero la clave es el 'app_build_command' más abajo.
+      - name: Set up Node.js 20 (Runner)
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Puedes usar '20' o '20.x' o '22'
+          node-version: '20' 
           
-      - name: Install OIDC Client from Core Package
-        run: npm install @actions/core@1.6.0 @actions/http-client
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
-        with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
+      # ⚠️ PASOS ELIMINADOS: Se elimina la lógica compleja de OIDC, 
+      # ya que estás usando el token de SWA.
+      
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GRAY_SAND_001F6F71E }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          
+          ###### Repository/Build Configurations - Valores configurados ######
           app_location: "/" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist" # Built app content directory - optional
-          github_id_token: ${{ steps.idtoken.outputs.result }}
+          api_location: "" # Api source code path - sin API de Funciones
+          output_location: "dist" # Built app content directory (típico de Vite)
+          
+          # 🔑 SOLUCIÓN CRÍTICA: Forzar el uso de Node 20 para la compilación de Oryx.
+          # Esto resuelve el error de compatibilidad con Vite.
+          app_build_command: "nvm use 20 && npm run build"
+          
+          # Se elimina github_id_token
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
