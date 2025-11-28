@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { Menu, X } from 'lucide-react';
 import { sendRiskAlert } from '../api/riskAlertApi';
 import { sendChat, listSessionMessagesServer } from '../api/chatApi';
 import type { ChatMessage } from '../api/chatApi';
@@ -281,21 +282,64 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
     setMessages([{ role: 'system', content: initialSystemPrompt }]);
   }
 
+  const [showSessionDrawer, setShowSessionDrawer] = useState(false);
+
   return (
-    <div className="flex h-full font-sans gap-4 bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="flex h-full font-sans gap-4 flex-col md:flex-row bg-[color:var(--color-surface)] text-[color:var(--color-text)] transition-colors duration-300">
+      {/* Mobile drawer for sessions */}
       {user?.id && (
-        <SessionSidebar
-          userId={user.id}
-          currentSessionId={sessionId}
-          onSelect={selectSession}
-          onNew={startNewSession}
-        />
+        <>
+
+
+          {/* Sidebar inline on md+ */}
+          <div className="hidden md:block">
+            <SessionSidebar
+              userId={user.id}
+              currentSessionId={sessionId}
+              onSelect={selectSession}
+              onNew={startNewSession}
+            />
+          </div>
+
+          {/* Drawer overlay on small screens*/}
+          {showSessionDrawer && (
+            <div className="fixed inset-x-0 top-16 bottom-0 z-50 md:hidden"> {/* avoid covering global header (h-16) */}
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowSessionDrawer(false)} />
+              <div id="session-drawer" className="absolute left-0 top-0 bottom-0 w-11/12 w-140 p-4">
+                <div className="bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-xl h-full shadow-lg p-4 overflow-y-auto backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-semibold text-[color:var(--color-text)]">Sesiones</div>
+                    <button className="p-1 rounded-lg hover:bg-[color:var(--color-hover)]" onClick={() => setShowSessionDrawer(false)} aria-label="Cerrar">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <SessionSidebar
+                    userId={user.id}
+                    currentSessionId={sessionId}
+                    onSelect={(id) => { selectSession(id); setShowSessionDrawer(false); }}
+                    onNew={() => { startNewSession(); setShowSessionDrawer(false); }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
-      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-white dark:bg-gray-900 shadow-lg">
+      <div className="flex flex-col flex-1 h-full max-h-[80vh] md:max-h-[88vh] rounded-xl bg-[color:var(--color-surface)] shadow-lg border border-[color:var(--color-border)]">
+        {/* Mobile header: show small bar with toggle */}
+        <div className="w-full md:hidden p-3 border-b border-[color:var(--color-border)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowSessionDrawer(true)} className="p-2 rounded-md hover:bg-[color:var(--color-hover)]">
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="font-semibold text-[color:var(--color-text)]">Asistente virtual</div>
+          </div>
+          <div className="text-sm text-[color:var(--color-text)]/80">Blue</div>
+        </div>
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800"
+          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-gradient-to-b from-[color:var(--bg-start)] to-[color:var(--bg-end)]"
           onWheel={registerUserInteraction}
           onMouseDown={registerUserInteraction}
           onTouchStart={registerUserInteraction}
@@ -304,7 +348,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
             <button
               type="button"
               onClick={scrollToBottom}
-              className="absolute right-6 bottom-6 z-10 px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg animate-popIn flex items-center gap-1"
+              className="absolute right-6 bottom-6 z-10 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg animate-popIn flex items-center gap-1"
               aria-label="Ir al final"
             >⬇ Ir al final</button>
           )}
@@ -315,11 +359,11 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
             return (
               <div
                 key={i}
-                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 dark:bg-indigo-900 self-end ml-auto' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'} animate-fadeIn`}
+                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[92%] sm:max-w-[80%] ${isUser ? 'bg-[color:var(--user-bubble-bg)] text-[color:var(--user-bubble-text)] self-end ml-auto' : 'bg-[color:var(--color-surface)] text-[color:var(--color-text)] border border-[color:var(--color-border)]'} animate-fadeIn`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
               >
-                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between text-gray-900 dark:text-gray-100">
-                  <span className={isUser ? 'text-indigo-700' : 'text-blue-700 flex items-center gap-1'}>
+                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between">
+                  <span className={`flex items-center gap-1 ${isUser ? 'text-[color:var(--user-bubble-text)]' : 'text-[color:var(--color-primary)]'}`}>
                     {isUser
                       ? (user?.role_id === 2 ? 'Docente' : 'Tú')
                       : <><img src="/blue-avatar.jpg" alt="Blue" className="inline-block w-7 h-7 rounded-full mr-2 align-middle animate-popIn shadow-lg" style={{boxShadow: '0 0 12px 2px #60a5fa'}} />Blue</>}
@@ -328,7 +372,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
                     <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
                   )}
                 </div>
-                <div className="text-[15px] md:text-base leading-relaxed text-gray-900 dark:text-gray-100">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
+                <div className={`text-[15px] md:text-base leading-relaxed ${isUser ? 'text-[color:var(--user-bubble-text)]' : 'text-[color:var(--color-text)]'}`}>{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
                 {m.emotion && (
                   <div className="mt-2 inline-flex items-center gap-1 text-[11px] dark:text-gray-300" aria-label={`Emoción detectada: ${m.emotion}`}>
                     <span className="uppercase text-gray-500">Emoción:</span>
@@ -349,12 +393,12 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           })}
           <div ref={endRef} />
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t border-[color:var(--color-border)] flex gap-3 bg-[color:var(--color-surface)] sticky bottom-0 z-10 md:static">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
+            className="flex-1 rounded-lg border border-[color:var(--color-border)] px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-[color:var(--color-surface)] shadow-sm text-[color:var(--color-text)]"
             disabled={streaming}
             style={{ fontFamily: 'Inter, sans-serif' }}
           />

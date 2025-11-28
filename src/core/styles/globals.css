@@ -52,6 +52,9 @@
   --color-text: #0f172a;
   --color-border: #e5e7eb;
   --color-hover: rgba(15,23,42,0.03);
+  /* Burbuja de usuario: fondo y texto (tema claro) */
+  --user-bubble-bg: #2647a5; /* blue-600 */
+  --user-bubble-text: #ffffff;
 }
 
 html.dark {
@@ -68,6 +71,9 @@ html.dark {
   --color-text: #e5e7eb;
   --color-border: #1f2937;
   --color-hover: rgba(229,231,235,0.02);
+  /* Burbuja de usuario: fondo y texto (tema oscuro) */
+  --user-bubble-bg: #1e3a8a; /* blue-800 */
+  --user-bubble-text: #e6eef8;
 }
 
 body {
