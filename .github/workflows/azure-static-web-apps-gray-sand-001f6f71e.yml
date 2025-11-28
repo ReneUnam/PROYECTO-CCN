@@ -22,6 +22,12 @@ jobs:
         with:
           submodules: true
           lfs: false
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Puedes usar '20' o '20.x' o '22'
+          
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
       - name: Get Id Token
