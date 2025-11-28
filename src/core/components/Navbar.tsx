@@ -1,5 +1,6 @@
 import { ThemeToggle } from "./ThemeToggle";
 import { Menu } from "lucide-react";
+import { Link } from 'react-router-dom';
 
 
 type Props = { onToggleSidebar?: () => void };
@@ -16,13 +17,15 @@ export function Navbar({ onToggleSidebar }: Props) {
         >
           <Menu size={18} />
         </button>
-        <img
-          src="/logo.png"
-          alt="Logo"
-          className="h-8 w-8 object-contain logo-stroke-white"
-          style={{ ['--stroke' as any]: '1px' }}
-        />
-        <h1 className="text-xl font-semibold text-tertiary">CCN BlueWeb</h1>
+        <Link to="/" className="flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="h-8 w-8 object-contain logo-stroke-white"
+            style={{ ['--stroke' as any]: '1px' }}
+          />
+          <h1 className="text-xl font-semibold text-tertiary">CCN BlueWeb</h1>
+        </Link>
       </div>
       <ThemeToggle />
     </header>

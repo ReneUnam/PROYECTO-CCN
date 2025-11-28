@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "@/features/auth/pages/LoginPage";
+import WelcomePage from "@/features/home/pages/WelcomePage";
 import RegisterPage from "@/features/auth/pages/registerPage";
 import TermsAndConditions from "@/features/auth/pages/Terms-and-conditionsPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
@@ -30,6 +31,7 @@ import AdminPanel from '@/features/admin';
 const router = createBrowserRouter([
   
   // Públicas
+  { path: '/', element: <WelcomePage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/terms', element: <TermsAndConditions /> },
   { path: '/auth/confirm-email', element: <ConfirmEmailPage /> },
