@@ -25,10 +25,9 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_WATER_02493ED1E }}
           app_build_command: >
-            nvm use 20 && 
-            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} 
-            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} 
-            VITE_CHAT_API_URL=${{ secrets.VITE_CHAT_API_URL }}
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
+            VITE_CHAT_API_URL=${{ secrets.VITE_CHAT_API_URL }} \
             npm run build
             
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
@@ -51,4 +50,5 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_WATER_02493ED1E }}
           action: "close"
+
 
