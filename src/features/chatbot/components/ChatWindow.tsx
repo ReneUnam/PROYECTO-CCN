@@ -316,7 +316,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
         </div>
       )}
       {/* Mobile: toggle button and overlay */}
-      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-surface shadow-lg border border-border">
+      <div className="relative flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-surface shadow-lg border border-border">
         {/* Mobile header with toggle */}
         <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-border bg-surface">
           <button aria-label="Abrir menú" type="button" onClick={() => setSidebarOpen(true)} className="p-2 rounded-md hover:bg-primary/10 transition">
@@ -335,26 +335,18 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           onMouseDown={registerUserInteraction}
           onTouchStart={registerUserInteraction}
         >
-          {!autoScroll && scrollDistance > 120 && (
-            <button
-              type="button"
-              onClick={scrollToBottom}
-              className="absolute right-6 bottom-6 z-10 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg animate-popIn flex items-center gap-1"
-              aria-label="Ir al final"
-            >⬇ Ir al final</button>
-          )}
           {messages.filter(m => m.role !== 'system').map((m, i) => {
             const isUser = m.role === 'user';
             const badgeColor = emotionColor(m.emotion);
             const icon = emotionIcon(m.emotion);
-            return (
+              return (
               <div
                 key={i}
-                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 dark:bg-indigo-900 self-end ml-auto' : 'bg-surface border border-border'} animate-fadeIn`}
+                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-primary text-white dark:bg-primary/90 self-end ml-auto' : 'bg-surface border border-border'} animate-fadeIn`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
               >
                 <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between text-text">
-                  <span className={isUser ? 'text-indigo-700 dark:text-indigo-100' : 'text-blue-700 flex items-center gap-1'}>
+                  <span className={isUser ? 'text-white/90' : 'text-blue-700 flex items-center gap-1'}>
                     {isUser
                       ? (user?.role_id === 2 ? 'Docente' : 'Tú')
                       : <><img src="/blue-avatar.jpg" alt="Blue" className="inline-block w-7 h-7 rounded-full mr-2 align-middle animate-popIn shadow-lg" style={{boxShadow: '0 0 12px 2px #60a5fa'}} />Blue</>}
@@ -362,11 +354,11 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
                   {m.created_at && (
                     <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
                   )}
-                </div>/* El contenido del mensaje */
-                <div className={`text-[15px] md:text-base leading-relaxed ${isUser ? 'text-indigo-900 dark:text-indigo-100' : 'text-text'}`}>{m.content || (streaming && m.role === 'assistant' ? 'Pensando...' : '')}</div>
+                </div> 
+                <div className={`text-[15px] md:text-base leading-relaxed ${isUser ? 'text-white' : 'text-text'}`}>{m.content || (streaming && m.role === 'assistant' ? 'Pensando...' : '')}</div>
                 {m.emotion && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-text/80" aria-label={`Emoción detectada: ${m.emotion}`}>
-                    <span className="uppercase text-gray-500">Emoción:</span>
+                  <div className="mt-2 inline-flex items-center gap-1 text-[11px]" aria-label={`Emoción detectada: ${m.emotion}`}>
+                    <span className={isUser ? 'uppercase text-[10px] text-white/85' : 'uppercase text-[10px] text-text/70'}>Emoción:</span>
                     <span
                       title="Clasificación automática (puede contener errores)"
                       className="px-2 py-[3px] rounded-full border flex items-center gap-1"
@@ -384,6 +376,15 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           })}
           <div ref={endRef} />
         </div>
+        {/* Botón fijo para ir al final: está fuera del contenedor scrollable para no moverse */}
+        {!autoScroll && scrollDistance > 120 && (
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            className="absolute right-6 bottom-24 z-50 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg animate-popIn flex items-center gap-1"
+            aria-label="Ir al final"
+          >⬇ Ir al final</button>
+        )}
         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-surface border-border">
           <input
             value={input}
