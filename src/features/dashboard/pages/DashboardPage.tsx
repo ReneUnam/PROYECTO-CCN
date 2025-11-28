@@ -82,7 +82,9 @@ export function DashboardPage() {
   const roleId = user?.role_id ?? 3; // 1=admin,2=teacher,3=student
   const isAdmin = roleId === 1;
   const displayName = user?.full_name ?? 'Usuario';
-  const visibleActions = quickActions.filter(a => isAdmin || !a.allowedRoleIds || a.allowedRoleIds.includes(roleId));
+  const isTeacher = roleId === 2;
+  const visibleActions = quickActions.filter(a => isAdmin || !a.allowedRoleIds || a.allowedRoleIds.includes(roleId)).filter(a => !isTeacher || (a.id !== 'surveys' && a.id !== 'chatbot'));
+  const cardSizeClass = isTeacher ? 'h-72 md:h-80' : 'h-56';
 
   const highlights = [
     { id: "selfStreak", title: "Constancia del diario de autocuido", value: streakSelf != null ? `${streakSelf} día${streakSelf === 1 ? '' : 's'}` : "-" },
@@ -123,7 +125,7 @@ export function DashboardPage() {
             </p>
           </div>
 
-          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 md:w-auto">
+          <div className={`grid w-full grid-cols-1 gap-3 ${isTeacher ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} md:w-auto`}>
             {highlights.map((item) => (
               <article
                 key={item.id}
@@ -145,12 +147,12 @@ export function DashboardPage() {
           <p className="text-sm">Selecciona una tarjeta para continuar con tu siguiente actividad.</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 ${isTeacher ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
           {visibleActions.map((card) => (
             <Link
               key={card.id}
               to={card.route}
-              className="group relative flex h-56 w-full flex-col justify-end overflow-hidden rounded-3xl bg-surface text-left shadow border border-border transition hover:-translate-y-1 hover:shadow-lg"
+              className={`group relative flex ${cardSizeClass} w-full flex-col justify-end overflow-hidden rounded-3xl bg-surface text-left shadow border border-border transition hover:-translate-y-1 hover:shadow-lg`}
             >
               {/* ...existing code... */}
               {card.image && (

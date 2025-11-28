@@ -59,6 +59,24 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   }
 
   const { user } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Close overlay on Escape
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sidebarOpen]);
+
+  // Prevent body scroll when mobile sidebar open
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [sidebarOpen]);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'system', content: initialSystemPrompt }
   ]);
@@ -282,20 +300,34 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   }
 
   return (
-    <div className="flex h-full font-sans gap-4 bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="flex h-full font-sans gap-4 bg-surface transition-colors duration-300">
+      {/* Desktop / Large screens: show sidebar */}
       {user?.id && (
-        <SessionSidebar
-          userId={user.id}
-          currentSessionId={sessionId}
-          onSelect={selectSession}
-          onNew={startNewSession}
-        />
+        <div className="hidden md:block">
+          <SessionSidebar
+            userId={user.id}
+            currentSessionId={sessionId}
+            onSelect={selectSession}
+            onNew={startNewSession}
+          />
+        </div>
       )}
-      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-white dark:bg-gray-900 shadow-lg">
+      {/* Mobile: toggle button and overlay */}
+      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-surface shadow-lg border border-border">
+        {/* Mobile header with toggle */}
+        <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-border bg-surface">
+          <button aria-label="Abrir menú" type="button" onClick={() => setSidebarOpen(true)} className="p-2 rounded-md hover:bg-primary/10 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div className="text-sm font-semibold text-text">Chat</div>
+          <div className="w-8" />
+        </div>
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800"
+          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-surface"
           onWheel={registerUserInteraction}
           onMouseDown={registerUserInteraction}
           onTouchStart={registerUserInteraction}
@@ -315,11 +347,11 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
             return (
               <div
                 key={i}
-                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 dark:bg-indigo-900 self-end ml-auto' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'} animate-fadeIn`}
+                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 dark:bg-indigo-900 self-end ml-auto' : 'bg-surface border border-border'} animate-fadeIn`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
               >
-                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between text-gray-900 dark:text-gray-100">
-                  <span className={isUser ? 'text-indigo-700' : 'text-blue-700 flex items-center gap-1'}>
+                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between text-text">
+                  <span className={isUser ? 'text-indigo-700 dark:text-indigo-100' : 'text-blue-700 flex items-center gap-1'}>
                     {isUser
                       ? (user?.role_id === 2 ? 'Docente' : 'Tú')
                       : <><img src="/blue-avatar.jpg" alt="Blue" className="inline-block w-7 h-7 rounded-full mr-2 align-middle animate-popIn shadow-lg" style={{boxShadow: '0 0 12px 2px #60a5fa'}} />Blue</>}
@@ -328,9 +360,9 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
                     <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
                   )}
                 </div>
-                <div className="text-[15px] md:text-base leading-relaxed text-gray-900 dark:text-gray-100">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
+                <div className={`text-[15px] md:text-base leading-relaxed ${isUser ? 'text-indigo-900 dark:text-indigo-100' : 'text-text'}`}>{m.content || (streaming && m.role === 'assistant' ? 'Pensando...' : '')}</div>
                 {m.emotion && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-[11px] dark:text-gray-300" aria-label={`Emoción detectada: ${m.emotion}`}>
+                  <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-text/80" aria-label={`Emoción detectada: ${m.emotion}`}>
                     <span className="uppercase text-gray-500">Emoción:</span>
                     <span
                       title="Clasificación automática (puede contener errores)"
@@ -349,18 +381,34 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           })}
           <div ref={endRef} />
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-surface border-border">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
+            className="flex-1 rounded-lg border border-border px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary bg-surface shadow-sm text-text"
             disabled={streaming}
             style={{ fontFamily: 'Inter, sans-serif' }}
           />
-          <button className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-base font-semibold shadow-md hover:bg-indigo-500 transition disabled:opacity-50 dark:bg-indigo-700 dark:hover:bg-indigo-600" disabled={streaming}>Enviar</button>
+          <button className="px-5 py-2 rounded-lg bg-primary text-white text-base font-semibold shadow-md hover:bg-primary/80 transition disabled:opacity-50" disabled={streaming}>Enviar</button>
         </form>
       </div>
+      {/* Mobile overlay sidebar */}
+      {user?.id && sidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-80 p-4 transform transition-transform duration-200 translate-x-0" role="dialog" aria-modal="true">
+            <SessionSidebar
+              userId={user.id}
+              currentSessionId={sessionId}
+              onSelect={(id) => { selectSession(id); setSidebarOpen(false); }}
+              onNew={() => { startNewSession(); setSidebarOpen(false); }}
+              isMobile
+              onClose={() => setSidebarOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -41,10 +41,10 @@ export function Sidebar({ open }: SidebarProps) {
   const links: LinkItem[] = [
     { label: "Inicio", path: "/dashboard", icon: Home },
     { label: "Perfil", path: "/profile", icon: User },
-    { label: "Diario", path: "/journal", icon: NotebookPen },
+    { label: "Diario", path: "/journal", icon: NotebookPen, allowedRoleIds: [1, 3] },
     { label: "Preguntas", path: "/questions", icon: HelpCircle },
     { label: "Buzón", path: "/forum", icon: Inbox },
-    { label: "Asistente virtual", path: "/chatbot", icon: Bot },
+    { label: "Asistente virtual", path: "/chatbot", icon: Bot, allowedRoleIds: [1, 3] },
     { label: "Recursos", path: "/resources", icon: BookOpen, allowedRoleIds: [2] },
     { label: "Bienestar", path: "/wellness", icon: Brain },
     { label: "Hábitos", path: "/habits", icon: CalendarCheck },
