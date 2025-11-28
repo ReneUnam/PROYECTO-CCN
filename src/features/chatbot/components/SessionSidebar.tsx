@@ -15,9 +15,11 @@ interface Props {
   currentSessionId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  isMobile?: boolean;
+  onClose?: () => void;
 }
 
-export default function SessionSidebar({ userId, currentSessionId, onSelect, onNew }: Props) {
+export default function SessionSidebar({ userId, currentSessionId, onSelect, onNew, isMobile, onClose }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -105,13 +107,19 @@ export default function SessionSidebar({ userId, currentSessionId, onSelect, onN
   }
 
   return (
-    <aside className="w-full md:w-80 bg-gradient-to-b from-[color:var(--bg-start)] to-[color:var(--bg-end)] p-6 flex flex-col gap-5 shadow-lg font-sans rounded-xl border border-[color:var(--color-border)]">
+    <aside className={`bg-surface p-6 flex flex-col gap-5 shadow-lg font-sans rounded-xl border border-border ${isMobile ? 'w-full h-full overflow-auto rounded-none' : 'w-80'}`}>
+      {isMobile && (
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-lg font-semibold text-text">Tus sesiones</div>
+          <button onClick={() => onClose?.()} aria-label="Cerrar" className="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-text">Cerrar</button>
+        </div>
+      )}
       <button
         onClick={onNew}
-        className="mb-3 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white text-base font-semibold shadow-md transition animate-popIn"
+        className="mb-3 px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-base font-semibold shadow-md transition animate-popIn"
       >+ Nueva conversación</button>
-      <div className="font-semibold text-[color:var(--color-text)] mb-3 text-lg">Tus sesiones</div>
-      {loading ? <div className="text-sm text-gray-500 dark:text-gray-400">Cargando...</div> : null}
+      {!isMobile && <div className="font-semibold text-text mb-3 text-lg">Tus sesiones</div>}
+      {loading ? <div className="text-sm text-text/70">Cargando...</div> : null}
       <ul className="flex-1 overflow-auto space-y-3">
         {sessions.map(s => {
           const active = s.id === currentSessionId;
@@ -123,10 +131,10 @@ export default function SessionSidebar({ userId, currentSessionId, onSelect, onN
                 data-id={s.id}
                 aria-pressed={active}
                 title={title}
-                className={`group w-full text-left rounded-2xl px-4 py-3 border flex items-center gap-3 shadow-md transition focus:outline-none focus:ring-2 focus:ring-indigo-400 font-sans
-                  ${active ? 'border-indigo-500 bg-[color:var(--color-surface)] shadow-lg' : 'border-transparent bg-[color:var(--bg-start)] hover:bg-[color:var(--color-hover)]'}`}
+                className={`group w-full text-left rounded-2xl px-4 py-3 border flex items-center gap-3 shadow-md transition focus:outline-none focus:ring-2 focus:ring-primary font-sans
+                  ${active ? 'border-primary bg-surface shadow-lg' : 'border-transparent bg-surface/80 hover:bg-primary/10'}`}
               >
-                <span className="text-base font-semibold text-[color:var(--color-text)] truncate" title={title}>{title}</span>
+                <span className="text-base font-semibold text-text truncate" title={title}>{title}</span>
                 {s.dominant_emotion && (
                   <span
                     className="text-[11px] px-3 py-[3px] rounded-full border font-semibold shadow-sm"
@@ -138,7 +146,7 @@ export default function SessionSidebar({ userId, currentSessionId, onSelect, onN
             </li>
           );
         })}
-        {sessions.length === 0 && !loading ? <li className="text-sm text-[color:var(--color-text)]/70">No tienes sesiones previas.</li> : null}
+        {sessions.length === 0 && !loading ? <li className="text-sm text-text/70">No tienes sesiones previas.</li> : null}
       </ul>
     </aside>
   );
