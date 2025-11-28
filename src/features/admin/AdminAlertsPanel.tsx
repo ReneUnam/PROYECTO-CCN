@@ -9,7 +9,8 @@ type Alert = {
 };
 
 async function fetchAlerts(): Promise<{ alerts: Alert[] }> {
-  const res = await fetch('/alerts');
+  const apiUrl = import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8787';
+  const res = await fetch(`${apiUrl}/alerts`);
   if (!res.ok) throw new Error('Error al obtener alertas');
   return await res.json();
 }

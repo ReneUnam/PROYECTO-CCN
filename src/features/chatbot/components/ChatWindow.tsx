@@ -282,7 +282,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
   }
 
   return (
-    <div className="flex h-full font-sans gap-4">
+    <div className="flex h-full font-sans gap-4 bg-white dark:bg-gray-900 transition-colors duration-300">
       {user?.id && (
         <SessionSidebar
           userId={user.id}
@@ -291,11 +291,11 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           onNew={startNewSession}
         />
       )}
-      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-white shadow-lg">
+      <div className="flex flex-col flex-1 h-full max-h-[80vh] rounded-xl bg-white dark:bg-gray-900 shadow-lg">
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-gradient-to-b from-gray-50 to-white"
+          className="flex-1 overflow-auto p-6 space-y-4 text-base relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800"
           onWheel={registerUserInteraction}
           onMouseDown={registerUserInteraction}
           onTouchStart={registerUserInteraction}
@@ -315,10 +315,10 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
             return (
               <div
                 key={i}
-                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 self-end ml-auto' : 'bg-white border border-gray-200'} animate-fadeIn`}
+                className={`group mb-3 px-4 py-3 rounded-2xl whitespace-pre-wrap transition shadow-md hover:shadow-lg max-w-[80%] ${isUser ? 'bg-indigo-100 dark:bg-indigo-900 self-end ml-auto' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'} animate-fadeIn`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
               >
-                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between">
+                <div className="text-xs font-semibold mb-1 flex items-center gap-2 justify-between text-gray-900 dark:text-gray-100">
                   <span className={isUser ? 'text-indigo-700' : 'text-blue-700 flex items-center gap-1'}>
                     {isUser
                       ? (user?.role_id === 2 ? 'Docente' : 'Tú')
@@ -328,9 +328,9 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
                     <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
                   )}
                 </div>
-                <div className="text-[15px] md:text-base leading-relaxed text-gray-900">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
+                <div className="text-[15px] md:text-base leading-relaxed text-gray-900 dark:text-gray-100">{m.content || (streaming && m.role === 'assistant' ? '...' : '')}</div>
                 {m.emotion && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-[11px]" aria-label={`Emoción detectada: ${m.emotion}`}>
+                  <div className="mt-2 inline-flex items-center gap-1 text-[11px] dark:text-gray-300" aria-label={`Emoción detectada: ${m.emotion}`}>
                     <span className="uppercase text-gray-500">Emoción:</span>
                     <span
                       title="Clasificación automática (puede contener errores)"
@@ -349,16 +349,16 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
           })}
           <div ref={endRef} />
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-gray-50">
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 border-t flex gap-3 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white shadow-sm"
+            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
             disabled={streaming}
             style={{ fontFamily: 'Inter, sans-serif' }}
           />
-          <button className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-base font-semibold shadow-md hover:bg-indigo-500 transition disabled:opacity-50" disabled={streaming}>Enviar</button>
+          <button className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-base font-semibold shadow-md hover:bg-indigo-500 transition disabled:opacity-50 dark:bg-indigo-700 dark:hover:bg-indigo-600" disabled={streaming}>Enviar</button>
         </form>
       </div>
     </div>

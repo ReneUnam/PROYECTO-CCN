@@ -1,10 +1,11 @@
 // Streaming contra Ollama local
 // Requiere tener el daemon Ollama corriendo y modelo descargado
-const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'llama3:8b';
+const DEFAULT_MODEL = (process.env.OLLAMA_MODEL || 'llama2:7b-chat').trim();
 
 function buildPrompt(messages) {
-  // Convierte historial en formato simple
-  return messages.map(m => {
+  // Limitar a los últimos 3 mensajes
+  const limited = messages.slice(-3);
+  return limited.map(m => {
     if (m.role === 'system') return `Instrucciones: ${m.content}`;
     if (m.role === 'user') return `Usuario: ${m.content}`;
     return `Asistente: ${m.content}`;
@@ -20,17 +21,24 @@ export async function streamLLM(messages, onToken) {
     options: {
       temperature: 0.3, // Directo
       num_ctx: 2048,
-      num_predict: 384, // Más largo para evitar cortes
+      num_predict: 300, // Respuestas más directas y rápidas
       top_p: 0.9 // Menos divagación
     }
   };
+
+  // Log para depuración
+  console.log('[OLLAMA] Modelo:', body.model);
+  console.log('[OLLAMA] Body:', JSON.stringify(body));
 
   const res = await fetch('http://localhost:11434/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if (!res.ok || !res.body) throw new Error(`Ollama fallo: ${res.status}`);
+  if (!res.ok || !res.body) {
+    console.error('[OLLAMA] Error status:', res.status);
+    throw new Error(`Ollama fallo: ${res.status}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
@@ -45,9 +53,13 @@ export async function streamLLM(messages, onToken) {
         const obj = JSON.parse(line);
         if (obj.response) {
           // Log de depuración para ver tokens reales del modelo
-          console.log('[llm-token]', JSON.stringify(obj.response));
-          onToken(obj.response);
-          full += obj.response;
+          let clean = obj.response;
+          if (clean.startsWith('Asistente:')) {
+            clean = clean.replace(/^Asistente:\s*/, '');
+          }
+          console.log('[llm-token]', JSON.stringify(clean));
+          onToken(clean);
+          full += clean;
         }
       } catch (_) {
         /* ignorar */
