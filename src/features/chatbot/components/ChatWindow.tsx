@@ -359,7 +359,7 @@ export default function ChatWindow({ initialSystemPrompt = 'Eres un asistente ac
                   {m.created_at && (
                     <span className="text-[10px] text-gray-400" title={new Date(m.created_at).toLocaleString()}>{timeAgo(m.created_at)}</span>
                   )}
-                </div>
+                </div>/* El contenido del mensaje */
                 <div className={`text-[15px] md:text-base leading-relaxed ${isUser ? 'text-indigo-900 dark:text-indigo-100' : 'text-text'}`}>{m.content || (streaming && m.role === 'assistant' ? 'Pensando...' : '')}</div>
                 {m.emotion && (
                   <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-text/80" aria-label={`Emoción detectada: ${m.emotion}`}>
